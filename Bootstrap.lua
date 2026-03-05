@@ -207,25 +207,63 @@ ROOMS.Stairwell = {
 -----------------------------------------------------------------------
 local FurnitureFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Furniture")
 
--- Map internal type names → model names inside ReplicatedStorage.Furniture
+-- Map: internal type → { model name, scale, Y rotation adjustment }
+-- Scale adjusts the model size, RotFix adds extra rotation if model faces wrong way
 local FURNITURE_MAP = {
-	Desk         = "work station",
-	Chair        = "Chair - pemble08",
-	FileCab      = "cabinet 1",
-	WaterCooler  = "Refridgerator",
-	Barrel       = "cabinet 3",
-	ToolBox      = "small safe",
-	Console      = "work station",
-	Cot          = "couch",
-	MedKit       = "small safe",
-	Locker       = "cabinet 2",
-	ShelfUnit    = "shelf1",
-	Crate        = "cabinet 4",
-	LabBench     = "dinner table",
-	BathroomSink = "bathroom sink",
-	ServerRack   = "cabinet 4",
-	BathroomStall = "cabinet 3",  -- closest tall piece
+	Desk         = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
+	Chair        = { Model = "Chair - pemble08",  Scale = 1.0,  RotFix = 0   },
+	FileCab      = { Model = "cabinet 1",         Scale = 1.0,  RotFix = 0   },
+	WaterCooler  = { Model = "Refridgerator",     Scale = 0.8,  RotFix = 0   },
+	Barrel       = { Model = "cabinet 3",         Scale = 0.7,  RotFix = 0   },
+	ToolBox      = { Model = "small safe",        Scale = 0.6,  RotFix = 0   },
+	Console      = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
+	Cot          = { Model = "couch",             Scale = 1.0,  RotFix = 0   },
+	MedKit       = { Model = "small safe",        Scale = 0.5,  RotFix = 0   },
+	Locker       = { Model = "cabinet 2",         Scale = 1.0,  RotFix = 0   },
+	ShelfUnit    = { Model = "shelf1",            Scale = 1.0,  RotFix = 0   },
+	Crate        = { Model = "cabinet 4",         Scale = 0.8,  RotFix = 0   },
+	LabBench     = { Model = "dinner table",      Scale = 0.9,  RotFix = 0   },
+	BathroomSink = { Model = "bathroom sink",     Scale = 1.0,  RotFix = 0   },
+	ServerRack   = { Model = "cabinet 4",         Scale = 1.2,  RotFix = 0   },
+	BathroomStall= { Model = "cabinet 3",         Scale = 1.0,  RotFix = 0   },
 }
+
+-- Scale all BaseParts in a model
+local function scaleModel(model, factor)
+	if factor == 1 then return end
+	local parts = {}
+	if model:IsA("BasePart") then
+		parts = {model}
+	else
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") then table.insert(parts, p) end
+		end
+	end
+	-- Get center for scaling around the model's center
+	local cf, size
+	if model:IsA("Model") then
+		cf, size = model:GetBoundingBox()
+	else
+		cf = model.CFrame
+	end
+	local center = cf.Position
+	for _, p in ipairs(parts) do
+		p.Size = p.Size * factor
+		local offset = p.Position - center
+		p.CFrame = CFrame.new(center + offset * factor) * (p.CFrame - p.CFrame.Position)
+	end
+end
+
+-- Get the lowest Y point of a model (for grounding)
+local function getModelBounds(model)
+	if model:IsA("Model") then
+		local cf, size = model:GetBoundingBox()
+		return cf, size
+	elseif model:IsA("BasePart") then
+		return model.CFrame, model.Size
+	end
+	return CFrame.new(), Vector3.new(0,0,0)
+end
 
 local function cloneFurniture(typeName, pos, rot, parent)
 	-- Special case: ElevatorPanel is game-specific (neon button)
@@ -236,41 +274,56 @@ local function cloneFurniture(typeName, pos, rot, parent)
 		return
 	end
 
-	local modelName = FURNITURE_MAP[typeName]
-	if not modelName or not FurnitureFolder then return end
+	local info = FURNITURE_MAP[typeName]
+	if not info or not FurnitureFolder then return end
 
-	local template = FurnitureFolder:FindFirstChild(modelName)
+	local template = FurnitureFolder:FindFirstChild(info.Model)
 	if not template then
-		warn("[Bootstrap] Furniture model not found:", modelName, "for type", typeName)
+		warn("[Bootstrap] Furniture model not found:", info.Model, "for type", typeName)
 		return
 	end
 
 	local clone = template:Clone()
 	clone.Name = typeName
 
-	-- Position and rotate the model
-	if clone:IsA("Model") then
-		if clone.PrimaryPart then
-			clone:SetPrimaryPartCFrame(CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0))
-		else
-			-- If no PrimaryPart, set one
-			local firstPart = clone:FindFirstChildWhichIsA("BasePart", true)
-			if firstPart then
-				clone.PrimaryPart = firstPart
-				clone:SetPrimaryPartCFrame(CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0))
-			end
-		end
-	elseif clone:IsA("BasePart") then
-		clone.CFrame = CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0)
+	-- Ensure PrimaryPart is set for Models
+	if clone:IsA("Model") and not clone.PrimaryPart then
+		local firstPart = clone:FindFirstChildWhichIsA("BasePart", true)
+		if firstPart then clone.PrimaryPart = firstPart end
 	end
 
-	-- Anchor all parts so they don't fall
+	-- Parent it temporarily so GetBoundingBox works
+	clone.Parent = workspace
+
+	-- Anchor all parts first
 	for _, part in ipairs(clone:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.Anchored = true
-		end
+		if part:IsA("BasePart") then part.Anchored = true end
+	end
+	if clone:IsA("BasePart") then clone.Anchored = true end
+
+	-- Apply scaling
+	scaleModel(clone, info.Scale)
+
+	-- Get bounding box to calculate floor grounding
+	local bbCF, bbSize = getModelBounds(clone)
+	local bottomY = bbCF.Position.Y - bbSize.Y / 2  -- lowest point of model
+	local groundOffset = -bottomY  -- how much to raise so bottom is at Y=0
+
+	-- Final rotation = room rotation + any model-specific rotation fix
+	local finalRot = rot + info.RotFix
+
+	-- Calculate final position: place at target pos, grounded on floor
+	local finalPos = Vector3.new(pos.X, pos.Y + groundOffset, pos.Z)
+
+	-- Move the model to final position with rotation
+	if clone:IsA("Model") then
+		-- First move to final pos
+		clone:SetPrimaryPartCFrame(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
+	elseif clone:IsA("BasePart") then
+		clone.CFrame = CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0)
 	end
 
+	-- Reparent to the room folder
 	clone.Parent = parent
 end
 
