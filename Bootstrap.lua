@@ -191,7 +191,7 @@ ROOMS.Elevator = {
 	Name="Elevator", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete, IsSafe=true,
 	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={fix("ElevatorPanel",10,3,0,90)},
+	Furniture={fix("ElevatorPanel",11.5,3,0,90)},
 	HidingSpots={},
 }
 
@@ -569,9 +569,15 @@ end
 -----------------------------------------------------------------------
 -- MAIN
 -----------------------------------------------------------------------
--- Clear old map
+-- Clear old map and default baseplate
 local old = workspace:FindFirstChild("GeneratedMap")
 if old then old:Destroy() end
+local baseplate = workspace:FindFirstChild("Baseplate")
+if baseplate then baseplate:Destroy() end
+-- Also remove any default SpawnLocations
+for _, obj in ipairs(workspace:GetDescendants()) do
+	if obj:IsA("SpawnLocation") then obj:Destroy() end
+end
 
 local mapFolder = Instance.new("Folder")
 mapFolder.Name = "GeneratedMap"
