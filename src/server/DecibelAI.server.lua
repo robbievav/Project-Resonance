@@ -427,6 +427,13 @@ local function aiTick()
 				local char = nearestPlayer.Character
 				if char then
 					local hum = char:FindFirstChildOfClass("Humanoid")
+					if hum then
+						hum.Health = 0
+					end
+				end
+			end
+		end
+
 	elseif currentState == State.NEAR_MISS then
 		if nearestPlayer and nearestPlayer.Character then
 			local playerPos = nearestPlayer.Character:FindFirstChild("HumanoidRootPart")
