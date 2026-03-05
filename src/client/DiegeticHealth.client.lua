@@ -96,11 +96,16 @@ local function onCharacterAdded(character)
 	vignetteGui.Parent = player.PlayerGui
 	deathGui.Parent = player.PlayerGui
 
+	-- Reset death effects
+	damageBlur.Enabled = false
+	damageBlur.Size = 0
+	deathFrame.BackgroundTransparency = 1
+
 	-- Disable natural regen
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 
-	lastHealth = Config.Player.MaxHealth
+	local lastHealth = humanoid.Health
 
 	-- Health changed
 	humanoid.HealthChanged:Connect(function(newHealth)
