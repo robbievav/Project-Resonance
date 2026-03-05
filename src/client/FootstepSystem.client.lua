@@ -50,9 +50,11 @@ local materialMap = {
 	[Enum.Material.Metal]         = Config.FootstepSounds.Metal,
 	[Enum.Material.CorrodedMetal] = Config.FootstepSounds.Metal,
 	[Enum.Material.Marble]        = Config.FootstepSounds.Tile,
-	[Enum.Material.Granite]       = Config.FootstepSounds.Tile,
+	[Enum.Material.Granite]       = Config.FootstepSounds.Granite,
+	[Enum.Material.Glass]         = Config.FootstepSounds.Glass,
 	[Enum.Material.Fabric]        = Config.FootstepSounds.Carpet,
 	[Enum.Material.Wood]          = Config.FootstepSounds.Carpet,
+	[Enum.Material.Slate]         = Config.FootstepSounds.Concrete,
 }
 
 ---------------------------------------------------------------------------
@@ -90,6 +92,9 @@ local function onCharacterAdded(character)
 		isSprinting = humanoid.WalkSpeed >= Config.Player.RunSpeed
 
 		if not isMoving then return end
+
+		-- Suppress footsteps while hiding
+		if character:GetAttribute("IsHiding") then return end
 
 		-- Step interval depends on speed
 		local stepInterval

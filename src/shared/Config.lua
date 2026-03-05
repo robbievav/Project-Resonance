@@ -9,28 +9,36 @@ local Config = {}
 -- MAP GENERATION
 ---------------------------------------------------------------------------
 Config.Map = {
-	Seed            = 0,          -- 0 = random seed each round
-	FloorsToGenerate = 3,         -- Phase 1 cap (target: 50)
-	RoomGridSize    = 5,          -- NxN grid of rooms per floor
-	RoomUnit        = 24,         -- studs per room tile
-	HallwayWidth    = 8,          -- studs
-	WallHeight      = 12,         -- studs
-	WallThickness   = 1,          -- studs
-	DoorWidth       = 5,          -- studs
-	DoorHeight      = 8,          -- studs
-	FloorSeparation = 50,         -- vertical gap between floors
+	Seed             = 0,          -- 0 = random seed each round
+	FloorsToGenerate = 50,         -- full facility depth
+	RoomGridSize     = 5,          -- NxN grid of rooms per floor
+	RoomUnit         = 24,         -- studs per room tile
+	HallwayWidth     = 8,          -- studs
+	WallHeight       = 12,         -- studs
+	WallThickness    = 1,          -- studs
+	DoorWidth        = 5,          -- studs
+	DoorHeight       = 8,          -- studs
+	FloorSeparation  = 50,         -- vertical gap between floors
+	ActiveFloorRange = 1,          -- only keep ±N floors loaded
+	StairwellGridRow = 2,          -- fixed grid position for stairwells
+	StairwellGridCol = 4,
 }
 
 ---------------------------------------------------------------------------
 -- ROOM TYPES & WEIGHTS  (higher weight = more common)
 ---------------------------------------------------------------------------
 Config.RoomWeights = {
-	Hallway          = 30,
-	Office           = 25,
-	MaintenanceTunnel = 15,
-	ObservationDeck  = 10,
-	SafeHub          = 5,
-	Elevator         = 0,  -- placed explicitly, not randomly
+	Hallway           = 25,
+	Office            = 20,
+	MaintenanceTunnel = 12,
+	ObservationDeck   = 8,
+	SafeHub           = 4,
+	StorageRoom       = 12,
+	Laboratory        = 10,
+	Bathroom          = 8,
+	ServerRoom        = 6,
+	Elevator          = 0,   -- placed explicitly, not randomly
+	Stairwell         = 0,   -- placed explicitly
 }
 
 ---------------------------------------------------------------------------
@@ -57,6 +65,11 @@ Config.Colors = {
 	Rust          = Color3.fromRGB(140, 85, 55),
 	DoorFrame     = Color3.fromRGB(130, 125, 115),
 	FluorLight    = Color3.fromRGB(235, 230, 210),
+	LabWhite      = Color3.fromRGB(215, 218, 220),
+	LabBench      = Color3.fromRGB(55, 55, 60),
+	TileWhite     = Color3.fromRGB(210, 210, 205),
+	ServerBlue    = Color3.fromRGB(20, 30, 50),
+	Crate         = Color3.fromRGB(120, 100, 70),
 }
 
 ---------------------------------------------------------------------------
@@ -91,6 +104,8 @@ Config.FootstepSounds = {
 	Metal      = "rbxassetid://9114234894",
 	Tile       = "rbxassetid://9114234894",
 	Carpet     = "rbxassetid://9114234894",
+	Glass      = "rbxassetid://9114234894",  -- laboratory
+	Granite    = "rbxassetid://9114234894",  -- stairwells
 	Default    = "rbxassetid://9114234894",
 }
 
@@ -110,14 +125,16 @@ Config.SoundLevels = {
 -- DECIBEL AI
 ---------------------------------------------------------------------------
 Config.AI = {
-	SpawnDelay         = 30,        -- seconds after round start
-	PatrolSpeed        = 8,
-	ChaseSpeed         = 20,
-	HearingRadius      = 80,       -- studs
-	SoundMemoryTime    = 5,        -- seconds to remember a sound
-	NearMissRadius     = 15,       -- studs  (wander-away threshold)
-	LoseInterestTime   = 8,        -- seconds without sound → resume patrol
-	DifficultyPerFloor = 0.1,      -- multiplier added per floor
+	SpawnDelay           = 30,        -- seconds after round start
+	PatrolSpeed          = 8,
+	ChaseSpeed           = 20,
+	HearingRadius        = 80,       -- studs
+	SoundMemoryTime      = 5,        -- seconds to remember a sound
+	NearMissRadius       = 15,       -- studs  (wander-away threshold)
+	LoseInterestTime     = 8,        -- seconds without sound → resume patrol
+	DifficultyPerFloor   = 0.1,      -- multiplier added per floor
+	FloorTransitionDelay = 5,        -- seconds before AI changes floors
+	DoorBreakTime        = 1.5,      -- seconds to break through a closed door (CHASE)
 }
 
 ---------------------------------------------------------------------------
@@ -142,6 +159,56 @@ Config.Audio = {
 	DrippingWaterId    = "rbxassetid://9114234894",
 	FluorescentHumId   = "rbxassetid://9114234894",
 	DroneFadeTime      = 2,        -- seconds
+}
+
+---------------------------------------------------------------------------
+-- HIDING SYSTEM
+---------------------------------------------------------------------------
+Config.Hiding = {
+	EnterTime          = 0.8,        -- seconds to enter a hiding spot
+	ExitTime           = 0.5,
+	BreathingBarSpeed  = 1.2,        -- how fast the timing bar oscillates
+	BreathingFailVolume = 0.6,       -- noise emitted on fail
+	MaxHideTime        = 45,         -- seconds before forced exit
+	CalmZoneWidth      = 0.3,        -- fraction of bar that is "calm" (0-1)
+}
+
+---------------------------------------------------------------------------
+-- FLOOR THEMES (deeper floors = more deteriorated)
+---------------------------------------------------------------------------
+Config.FloorThemes = {
+	{
+		Name        = "CleanOffice",
+		FloorRange  = {1, 10},
+		WallColor   = Color3.fromRGB(195, 190, 180),
+		FloorColor  = Color3.fromRGB(160, 155, 145),
+		WallMaterial = "Concrete",
+		LightMult   = 1.0,
+	},
+	{
+		Name        = "Deteriorating",
+		FloorRange  = {11, 25},
+		WallColor   = Color3.fromRGB(150, 145, 135),
+		FloorColor  = Color3.fromRGB(130, 125, 118),
+		WallMaterial = "Concrete",
+		LightMult   = 0.7,
+	},
+	{
+		Name        = "Industrial",
+		FloorRange  = {26, 40},
+		WallColor   = Color3.fromRGB(100, 95, 90),
+		FloorColor  = Color3.fromRGB(90, 88, 82),
+		WallMaterial = "Slate",
+		LightMult   = 0.45,
+	},
+	{
+		Name        = "Abandoned",
+		FloorRange  = {41, 50},
+		WallColor   = Color3.fromRGB(65, 60, 55),
+		FloorColor  = Color3.fromRGB(55, 52, 48),
+		WallMaterial = "Slate",
+		LightMult   = 0.25,
+	},
 }
 
 return Config

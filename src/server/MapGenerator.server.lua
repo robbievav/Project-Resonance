@@ -1,12 +1,14 @@
 --[[
 	MapGenerator.server.lua
 	Seed-based procedural floor generator for Project: Resonance.
-	Builds rooms from Part primitives, places doors, lights, and furniture.
+	Phase 2: 50 floors, lazy loading, stairwells, hiding spots, floor themes.
 ]]
 
-local ServerStorage    = game:GetService("ServerStorage")
+local ServerStorage     = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting          = game:GetService("Lighting")
+local Players           = game:GetService("Players")
+local RunService        = game:GetService("RunService")
 
 local Config        = require(ReplicatedStorage.Shared.Config)
 local RoomTemplates = require(ReplicatedStorage.Shared.RoomTemplates)
@@ -22,6 +24,25 @@ mapFolder.Name = "GeneratedMap"
 mapFolder.Parent = workspace
 
 ---------------------------------------------------------------------------
+-- LAZY LOADING STATE
+---------------------------------------------------------------------------
+local loadedFloors = {}   -- [floorIndex] = floorFolder
+local floorSeeds   = {}   -- [floorIndex] = RNG state (for deterministic rebuild)
+local masterRng    = nil  -- set in generate()
+
+---------------------------------------------------------------------------
+-- FLOOR THEME HELPER
+---------------------------------------------------------------------------
+local function getFloorTheme(floorIndex)
+	for _, theme in ipairs(Config.FloorThemes) do
+		if floorIndex >= theme.FloorRange[1] and floorIndex <= theme.FloorRange[2] then
+			return theme
+		end
+	end
+	return Config.FloorThemes[1]
+end
+
+---------------------------------------------------------------------------
 -- UTILITY HELPERS
 ---------------------------------------------------------------------------
 local function getMaterial(name)
@@ -30,28 +51,99 @@ end
 
 local function makePart(props)
 	local p = Instance.new("Part")
-	p.Anchored   = true
-	p.CanCollide = props.CanCollide ~= false
+	p.Anchored    = true
+	p.CanCollide  = props.CanCollide ~= false
 	p.Size        = props.Size or Vector3.new(1,1,1)
 	p.CFrame      = props.CFrame or CFrame.new()
-	p.Material     = props.Material or Enum.Material.SmoothPlastic
-	p.Color        = props.Color or Color3.fromRGB(180,180,180)
-	p.TopSurface   = Enum.SurfaceType.Smooth
+	p.Material    = props.Material or Enum.Material.SmoothPlastic
+	p.Color       = props.Color or Color3.fromRGB(180,180,180)
+	p.TopSurface  = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Name         = props.Name or "Part"
-	p.Parent       = props.Parent
+	p.Name        = props.Name or "Part"
+	p.Parent      = props.Parent
 	return p
+end
+
+---------------------------------------------------------------------------
+-- NEW FURNITURE BUILDERS (Phase 2)
+---------------------------------------------------------------------------
+local function buildShelfUnit(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	-- Frame
+	makePart({ Name="ShelfFrame", Size=Vector3.new(1.5, 8, 4), CFrame=CFrame.new(origin + Vector3.new(0,4,0)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(90,90,85), Parent=parent })
+	-- Shelves
+	for _, sy in ipairs({1.5, 3.5, 5.5, 7.5}) do
+		makePart({ Name="Shelf", Size=Vector3.new(2, 0.2, 4), CFrame=CFrame.new(origin + Vector3.new(0,sy,0)) * fRot, Material=Enum.Material.Wood, Color=Color3.fromRGB(110,95,70), Parent=parent })
+	end
+end
+
+local function buildCrate(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	makePart({ Name="Crate", Size=Vector3.new(3, 2.5, 3), CFrame=CFrame.new(origin + Vector3.new(0,1.25,0)) * fRot, Material=Enum.Material.Wood, Color=CC.Crate, Parent=parent })
+end
+
+local function buildLabBench(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	-- Bench surface (like a desk but wider and with a different look)
+	makePart({ Name="LabBenchTop", Size=Vector3.new(6, 0.3, 3), CFrame=CFrame.new(origin + Vector3.new(0,2.8,0)) * fRot, Material=Enum.Material.SmoothPlastic, Color=CC.LabBench, Parent=parent })
+	-- Legs
+	for _, lx in ipairs({-2.5, 2.5}) do
+		for _, lz in ipairs({-1.2, 1.2}) do
+			makePart({ Name="LabBenchLeg", Size=Vector3.new(0.3, 2.8, 0.3), CFrame=CFrame.new(origin + Vector3.new(lx, 1.4, lz)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(80,80,80), Parent=parent })
+		end
+	end
+	-- Beakers/equipment
+	makePart({ Name="Beaker", Size=Vector3.new(0.4, 0.8, 0.4), CFrame=CFrame.new(origin + Vector3.new(1, 3.3, 0)) * fRot, Material=Enum.Material.Glass, Color=Color3.fromRGB(180,200,180), Parent=parent })
+end
+
+local function buildBathroomStall(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	-- Left wall
+	makePart({ Name="StallWallL", Size=Vector3.new(0.2, 5, 4), CFrame=CFrame.new(origin + Vector3.new(-1.5, 2.5, 0)) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(180,180,175), Parent=parent })
+	-- Right wall
+	makePart({ Name="StallWallR", Size=Vector3.new(0.2, 5, 4), CFrame=CFrame.new(origin + Vector3.new(1.5, 2.5, 0)) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(180,180,175), Parent=parent })
+	-- Door
+	local stallDoor = makePart({ Name="StallDoor", Size=Vector3.new(2.8, 4, 0.15), CFrame=CFrame.new(origin + Vector3.new(0, 2, -2)) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(170,170,165), Parent=parent })
+	-- Toilet
+	makePart({ Name="Toilet", Size=Vector3.new(1.2, 1.5, 1.5), CFrame=CFrame.new(origin + Vector3.new(0, 0.75, 1)) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(230,230,225), Parent=parent })
+end
+
+local function buildBathroomSink(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	-- Counter
+	makePart({ Name="SinkCounter", Size=Vector3.new(0.5, 2.5, 6), CFrame=CFrame.new(origin + Vector3.new(0, 1.25, 0)) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(200,200,195), Parent=parent })
+	-- Mirror
+	local mirror = makePart({ Name="Mirror", Size=Vector3.new(0.1, 3, 5), CFrame=CFrame.new(origin + Vector3.new(-0.1, 4, 0)) * fRot, Material=Enum.Material.Glass, Color=Color3.fromRGB(150,160,170), Parent=parent })
+	mirror.Transparency = 0.3
+	mirror.Reflectance = 0.4
+end
+
+local function buildServerRack(origin, rot, parent)
+	local fRot = CFrame.Angles(0, math.rad(rot), 0)
+	-- Main rack body
+	makePart({ Name="ServerRackBody", Size=Vector3.new(2, 8, 3), CFrame=CFrame.new(origin + Vector3.new(0,4,0)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(30,30,35), Parent=parent })
+	-- Indicator LEDs (neon strips)
+	for i = 1, 5 do
+		local led = makePart({ Name="ServerLED", Size=Vector3.new(0.1, 0.15, 0.15), CFrame=CFrame.new(origin + Vector3.new(-1.05, 1.5 + i * 1.1, 0.5)) * fRot, Material=Enum.Material.Neon, Color=Color3.fromRGB(30,120,200), Parent=parent })
+	end
 end
 
 ---------------------------------------------------------------------------
 -- ROOM BUILDER
 ---------------------------------------------------------------------------
-local function buildRoom(template, origin, floorFolder)
+local function buildRoom(template, origin, floorFolder, floorIndex)
 	local unit = MC.RoomUnit
 	local sx = unit * template.SizeMultiplier.X
 	local sz = unit * template.SizeMultiplier.Z
 	local height = MC.WallHeight * template.SizeMultiplier.Y
 	local thick = MC.WallThickness
+
+	-- Apply floor theme overrides
+	local theme = getFloorTheme(floorIndex)
+	local wallColor = theme.WallColor
+	local floorColor = theme.FloorColor
+	local wallMat = getMaterial(theme.WallMaterial)
+	local lightMult = theme.LightMult
 
 	local roomFolder = Instance.new("Folder")
 	roomFolder.Name = template.Name
@@ -92,10 +184,9 @@ local function buildRoom(template, origin, floorFolder)
 
 	for _, w in ipairs(walls) do
 		if doorSet[w.side] then
-			-- Split the wall around a door opening
 			local dw = MC.DoorWidth
 			local dh = MC.DoorHeight
-			local dOff = doorSet[w.side].Offset  -- lateral offset
+			local dOff = doorSet[w.side].Offset
 
 			-- Above door
 			local aboveH = height - dh
@@ -108,7 +199,7 @@ local function buildRoom(template, origin, floorFolder)
 					aboveSize = Vector3.new(thick, aboveH, dw)
 					aboveCF   = CFrame.new(origin + w.pos + Vector3.new(0, (height - aboveH)/2, dOff))
 				end
-				makePart({ Name="WallAboveDoor", Size=aboveSize, CFrame=aboveCF, Material=getMaterial(template.WallMaterial), Color=template.WallColor, Parent=roomFolder })
+				makePart({ Name="WallAboveDoor", Size=aboveSize, CFrame=aboveCF, Material=wallMat, Color=wallColor, Parent=roomFolder })
 			end
 
 			-- Left of door
@@ -130,7 +221,7 @@ local function buildRoom(template, origin, floorFolder)
 					lSize = Vector3.new(thick, height, leftWidth)
 					lCF   = CFrame.new(origin + w.pos + Vector3.new(0, 0, dOff - dw/2 - leftWidth/2))
 				end
-				makePart({ Name="WallLeft", Size=lSize, CFrame=lCF, Material=getMaterial(template.WallMaterial), Color=template.WallColor, Parent=roomFolder })
+				makePart({ Name="WallLeft", Size=lSize, CFrame=lCF, Material=wallMat, Color=wallColor, Parent=roomFolder })
 			end
 
 			if rightWidth > 0.1 then
@@ -142,10 +233,10 @@ local function buildRoom(template, origin, floorFolder)
 					rSize = Vector3.new(thick, height, rightWidth)
 					rCF   = CFrame.new(origin + w.pos + Vector3.new(0, 0, dOff + dw/2 + rightWidth/2))
 				end
-				makePart({ Name="WallRight", Size=rSize, CFrame=rCF, Material=getMaterial(template.WallMaterial), Color=template.WallColor, Parent=roomFolder })
+				makePart({ Name="WallRight", Size=rSize, CFrame=rCF, Material=wallMat, Color=wallColor, Parent=roomFolder })
 			end
 
-			-- Create door part (interactable)
+			-- Create door part
 			local doorPart
 			if w.side == "PosZ" or w.side == "NegZ" then
 				doorPart = makePart({
@@ -167,7 +258,6 @@ local function buildRoom(template, origin, floorFolder)
 				})
 			end
 
-			-- Add a proximity prompt to the door
 			local prompt = Instance.new("ProximityPrompt")
 			prompt.ActionText = "Open"
 			prompt.ObjectText = "Door"
@@ -175,19 +265,17 @@ local function buildRoom(template, origin, floorFolder)
 			prompt.HoldDuration = 0.3
 			prompt.Parent = doorPart
 
-			-- Tag door for the DoorSystem
 			local tag = Instance.new("StringValue")
 			tag.Name = "DoorTag"
 			tag.Value = template.Name
 			tag.Parent = doorPart
 		else
-			-- Solid wall, no door
 			makePart({
 				Name   = "Wall_" .. w.side,
 				Size   = w.size,
 				CFrame = CFrame.new(origin + w.pos),
-				Material = getMaterial(template.WallMaterial),
-				Color    = template.WallColor,
+				Material = wallMat,
+				Color    = wallColor,
 				Parent   = roomFolder,
 			})
 		end
@@ -209,13 +297,12 @@ local function buildRoom(template, origin, floorFolder)
 
 			local light = Instance.new("SurfaceLight")
 			light.Face = Enum.NormalId.Bottom
-			light.Brightness = Config.Lighting.FluorescentBrightness
+			light.Brightness = Config.Lighting.FluorescentBrightness * lightMult
 			light.Range = Config.Lighting.FluorescentRange
 			light.Color = Config.Colors.FluorLight
 			light.Angle = 120
 			light.Parent = housing
 
-			-- Tag some lights for flickering
 			local rngFlicker = math.random()
 			if rngFlicker < Config.Lighting.FlickerChance then
 				local flickerTag = Instance.new("BoolValue")
@@ -234,7 +321,7 @@ local function buildRoom(template, origin, floorFolder)
 				Parent = roomFolder,
 			})
 			local pl = Instance.new("PointLight")
-			pl.Brightness = 0.5
+			pl.Brightness = 0.5 * lightMult
 			pl.Range = 16
 			pl.Color = Color3.fromRGB(180, 160, 100)
 			pl.Parent = bulb
@@ -268,9 +355,7 @@ local function buildRoom(template, origin, floorFolder)
 		local fRot = CFrame.Angles(0, math.rad(furn.Rotation), 0)
 
 		if furn.Type == "Desk" then
-			-- Desktop surface
 			makePart({ Name="DeskTop", Size=Vector3.new(5, 0.3, 2.5), CFrame=CFrame.new(fPos + Vector3.new(0, 2.5, 0)) * fRot, Material=Enum.Material.Wood, Color=Color3.fromRGB(130,100,70), Parent=roomFolder })
-			-- Legs
 			for _, lx in ipairs({-2.2, 2.2}) do
 				for _, lz in ipairs({-1, 1}) do
 					makePart({ Name="DeskLeg", Size=Vector3.new(0.3, 2.5, 0.3), CFrame=CFrame.new(fPos + Vector3.new(lx, 1.25, lz)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(90,90,90), Parent=roomFolder })
@@ -278,9 +363,7 @@ local function buildRoom(template, origin, floorFolder)
 			end
 
 		elseif furn.Type == "Chair" then
-			-- Seat
 			makePart({ Name="ChairSeat", Size=Vector3.new(2, 0.3, 2), CFrame=CFrame.new(fPos + Vector3.new(0,1.8,0)) * fRot, Material=Enum.Material.Fabric, Color=Color3.fromRGB(60,65,75), Parent=roomFolder })
-			-- Back
 			makePart({ Name="ChairBack", Size=Vector3.new(2, 2, 0.3), CFrame=CFrame.new(fPos + Vector3.new(0,2.8,-1)) * fRot, Material=Enum.Material.Fabric, Color=Color3.fromRGB(60,65,75), Parent=roomFolder })
 
 		elseif furn.Type == "FilingCabinet" then
@@ -298,9 +381,7 @@ local function buildRoom(template, origin, floorFolder)
 			makePart({ Name="ToolBox", Size=Vector3.new(2, 1, 1), CFrame=CFrame.new(fPos + Vector3.new(0,0.5,0)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(180,50,40), Parent=roomFolder })
 
 		elseif furn.Type == "Console" then
-			-- Base
 			makePart({ Name="ConsoleDeck", Size=Vector3.new(4, 2.5, 2), CFrame=CFrame.new(fPos + Vector3.new(0,1.25,0)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(70,70,75), Parent=roomFolder })
-			-- Screen
 			local screen = makePart({ Name="ConsoleScreen", Size=Vector3.new(3, 2, 0.2), CFrame=CFrame.new(fPos + Vector3.new(0,3.5,-0.8)) * fRot * CFrame.Angles(math.rad(-15),0,0), Material=Enum.Material.Neon, Color=Color3.fromRGB(30,80,50), Parent=roomFolder })
 			screen.Transparency = 0.2
 
@@ -316,7 +397,6 @@ local function buildRoom(template, origin, floorFolder)
 
 		elseif furn.Type == "MedKit" then
 			local kit = makePart({ Name="MedKit", Size=Vector3.new(1.5, 1, 0.5), CFrame=CFrame.new(fPos) * fRot, Material=Enum.Material.SmoothPlastic, Color=Color3.fromRGB(200,200,200), Parent=roomFolder })
-			-- Interactable
 			local prompt = Instance.new("ProximityPrompt")
 			prompt.ActionText = "Take"
 			prompt.ObjectText = "Med Kit"
@@ -327,9 +407,65 @@ local function buildRoom(template, origin, floorFolder)
 			makePart({ Name="Locker", Size=Vector3.new(1.5, 6, 2), CFrame=CFrame.new(fPos + Vector3.new(0,3,0)) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(95,100,95), Parent=roomFolder })
 
 		elseif furn.Type == "ElevatorPanel" then
-			local panel = makePart({ Name="ElevatorPanel", Size=Vector3.new(0.3, 1.5, 1), CFrame=CFrame.new(fPos) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(70,70,75), Parent=roomFolder })
-			-- Button indicator neon
-			local btn = makePart({ Name="ElevatorButton", Size=Vector3.new(0.35, 0.3, 0.3), CFrame=CFrame.new(fPos + Vector3.new(-0.05, 0.3, 0)) * fRot, Material=Enum.Material.Neon, Color=Color3.fromRGB(200, 60, 40), Parent=roomFolder })
+			makePart({ Name="ElevatorPanel", Size=Vector3.new(0.3, 1.5, 1), CFrame=CFrame.new(fPos) * fRot, Material=Enum.Material.Metal, Color=Color3.fromRGB(70,70,75), Parent=roomFolder })
+			makePart({ Name="ElevatorButton", Size=Vector3.new(0.35, 0.3, 0.3), CFrame=CFrame.new(fPos + Vector3.new(-0.05, 0.3, 0)) * fRot, Material=Enum.Material.Neon, Color=Color3.fromRGB(200, 60, 40), Parent=roomFolder })
+
+		-- Phase 2 furniture types
+		elseif furn.Type == "ShelfUnit" then
+			buildShelfUnit(fPos, furn.Rotation, roomFolder)
+
+		elseif furn.Type == "Crate" then
+			buildCrate(fPos, furn.Rotation, roomFolder)
+
+		elseif furn.Type == "LabBench" then
+			buildLabBench(fPos, furn.Rotation, roomFolder)
+
+		elseif furn.Type == "BathroomStall" then
+			buildBathroomStall(fPos, furn.Rotation, roomFolder)
+
+		elseif furn.Type == "BathroomSink" then
+			buildBathroomSink(fPos, furn.Rotation, roomFolder)
+
+		elseif furn.Type == "ServerRack" then
+			buildServerRack(fPos, furn.Rotation, roomFolder)
+		end
+	end
+
+	-- HIDING SPOTS (Phase 2)
+	if template.HidingSpots then
+		for _, spot in ipairs(template.HidingSpots) do
+			local spotPos = origin + spot.Offset
+			local spotRot = CFrame.Angles(0, math.rad(spot.Rotation), 0)
+
+			local hidePart = makePart({
+				Name = "HidingSpot",
+				Size = Vector3.new(2, 3, 2),
+				CFrame = CFrame.new(spotPos + Vector3.new(0, 1.5, 0)) * spotRot,
+				Material = Enum.Material.SmoothPlastic,
+				Color = Color3.fromRGB(0, 0, 0),
+				CanCollide = false,
+				Parent = roomFolder,
+			})
+			hidePart.Transparency = 1  -- invisible trigger volume
+
+			-- Tag it
+			local typeTag = Instance.new("StringValue")
+			typeTag.Name = "HideType"
+			typeTag.Value = spot.Type
+			typeTag.Parent = hidePart
+
+			local floorTag = Instance.new("IntValue")
+			floorTag.Name = "FloorIndex"
+			floorTag.Value = floorIndex
+			floorTag.Parent = hidePart
+
+			-- ProximityPrompt for entering the spot
+			local hidePrompt = Instance.new("ProximityPrompt")
+			hidePrompt.ActionText = "Hide"
+			hidePrompt.ObjectText = spot.Type
+			hidePrompt.MaxActivationDistance = 6
+			hidePrompt.HoldDuration = Config.Hiding.EnterTime
+			hidePrompt.Parent = hidePart
 		end
 	end
 
@@ -337,9 +473,54 @@ local function buildRoom(template, origin, floorFolder)
 end
 
 ---------------------------------------------------------------------------
--- HALLWAY CONNECTOR between two room grid cells
+-- STAIRWELL BUILDER — spiral staircase connecting this floor to the next
 ---------------------------------------------------------------------------
-local function buildConnector(posA, posB, floorFolder)
+local function buildStairwell(origin, floorIndex, floorFolder)
+	local height = MC.WallHeight * 2  -- stairwells are double height
+	local stairWidth = 3
+	local numSteps = 16
+	local stepHeight = MC.FloorSeparation / numSteps
+
+	-- Build the stairwell room itself
+	local template = RoomTemplates.Stairwell
+	buildRoom(template, origin, floorFolder, floorIndex)
+
+	-- Add spiral stairs going DOWN to next floor
+	local stairFolder = Instance.new("Folder")
+	stairFolder.Name = "Stairs_" .. floorIndex
+	stairFolder.Parent = floorFolder
+
+	for i = 0, numSteps - 1 do
+		local angle = (i / numSteps) * math.pi * 2
+		local y = -(i * stepHeight)
+		local x = math.cos(angle) * 4
+		local z = math.sin(angle) * 4
+
+		local step = makePart({
+			Name = "Step_" .. i,
+			Size = Vector3.new(stairWidth, 0.5, 2),
+			CFrame = CFrame.new(origin + Vector3.new(x, y - 0.25, z)) * CFrame.Angles(0, -angle, 0),
+			Material = Enum.Material.Concrete,
+			Color = Config.Colors.DarkConcrete,
+			Parent = stairFolder,
+		})
+
+		-- Railing
+		makePart({
+			Name = "Railing_" .. i,
+			Size = Vector3.new(0.2, 3, 0.2),
+			CFrame = CFrame.new(origin + Vector3.new(x + math.cos(angle) * 1.5, y + 1.25, z + math.sin(angle) * 1.5)),
+			Material = Enum.Material.Metal,
+			Color = Config.Colors.MetalGrate,
+			Parent = stairFolder,
+		})
+	end
+end
+
+---------------------------------------------------------------------------
+-- HALLWAY CONNECTOR
+---------------------------------------------------------------------------
+local function buildConnector(posA, posB, floorFolder, floorIndex)
 	local mid = (posA + posB) / 2
 	local diff = posB - posA
 	local length = diff.Magnitude
@@ -348,19 +529,18 @@ local function buildConnector(posA, posB, floorFolder)
 	local thick = MC.WallThickness
 	local hw = MC.HallwayWidth
 
+	local theme = getFloorTheme(floorIndex)
 	local cf = CFrame.lookAt(mid, mid + dir) * CFrame.new(0, 0, 0)
 
-	-- Floor
 	makePart({
 		Name = "ConnectorFloor",
 		Size = Vector3.new(hw, thick, length),
 		CFrame = cf * CFrame.new(0, -thick/2, 0),
 		Material = getMaterial(Config.Materials.Floor),
-		Color = Config.Colors.FloorTile,
+		Color = theme.FloorColor,
 		Parent = floorFolder,
 	})
 
-	-- Ceiling
 	makePart({
 		Name = "ConnectorCeiling",
 		Size = Vector3.new(hw, thick, length),
@@ -370,27 +550,24 @@ local function buildConnector(posA, posB, floorFolder)
 		Parent = floorFolder,
 	})
 
-	-- Left wall
 	makePart({
 		Name = "ConnectorWallL",
 		Size = Vector3.new(thick, height, length),
 		CFrame = cf * CFrame.new(-hw/2, height/2, 0),
-		Material = getMaterial(Config.Materials.Wall),
-		Color = Config.Colors.WallPaint,
+		Material = getMaterial(theme.WallMaterial),
+		Color = theme.WallColor,
 		Parent = floorFolder,
 	})
 
-	-- Right wall
 	makePart({
 		Name = "ConnectorWallR",
 		Size = Vector3.new(thick, height, length),
 		CFrame = cf * CFrame.new(hw/2, height/2, 0),
-		Material = getMaterial(Config.Materials.Wall),
-		Color = Config.Colors.WallPaint,
+		Material = getMaterial(theme.WallMaterial),
+		Color = theme.WallColor,
 		Parent = floorFolder,
 	})
 
-	-- Single dim light in connector
 	local bulb = makePart({
 		Name = "ConnectorLight",
 		Size = Vector3.new(0.4, 0.4, 0.4),
@@ -400,7 +577,7 @@ local function buildConnector(posA, posB, floorFolder)
 		Parent = floorFolder,
 	})
 	local pl = Instance.new("PointLight")
-	pl.Brightness = 0.4
+	pl.Brightness = 0.4 * getFloorTheme(floorIndex).LightMult
 	pl.Range = 14
 	pl.Color = Config.Colors.FluorLight
 	pl.Parent = bulb
@@ -410,6 +587,9 @@ end
 -- FLOOR GENERATOR
 ---------------------------------------------------------------------------
 local function generateFloor(floorIndex, rng)
+	-- Don't regenerate if already loaded
+	if loadedFloors[floorIndex] then return loadedFloors[floorIndex] end
+
 	local floorFolder = Instance.new("Folder")
 	floorFolder.Name = "Floor_" .. floorIndex
 	floorFolder.Parent = mapFolder
@@ -418,8 +598,7 @@ local function generateFloor(floorIndex, rng)
 	local grid  = MC.RoomGridSize
 	local unit  = MC.RoomUnit
 
-	-- Track which grid cells have rooms and their origin positions
-	local cellData = {}  -- [row][col] = { origin, template }
+	local cellData = {}
 
 	for row = 1, grid do
 		cellData[row] = {}
@@ -431,16 +610,23 @@ local function generateFloor(floorIndex, rng)
 			)
 
 			local templateName
-			-- Place the elevator at grid center on every floor
+			-- Place elevator at grid center
 			if row == math.ceil(grid/2) and col == math.ceil(grid/2) then
 				templateName = "Elevator"
+			-- Place stairwell at fixed position
+			elseif row == MC.StairwellGridRow and col == MC.StairwellGridCol then
+				templateName = "Stairwell"
 			else
 				templateName = RoomTemplates.GetRandomType(rng)
 			end
 
 			local template = RoomTemplates[templateName]
 			if template then
-				buildRoom(template, origin, floorFolder)
+				if templateName == "Stairwell" then
+					buildStairwell(origin, floorIndex, floorFolder)
+				else
+					buildRoom(template, origin, floorFolder, floorIndex)
+				end
 				cellData[row][col] = { origin = origin, template = template }
 			end
 		end
@@ -450,31 +636,29 @@ local function generateFloor(floorIndex, rng)
 	for row = 1, grid do
 		for col = 1, grid do
 			if cellData[row][col] then
-				-- Connect to right neighbor
 				if col < grid and cellData[row][col + 1] then
 					local a = cellData[row][col].origin
 					local b = cellData[row][col + 1].origin
 					local midA = a + Vector3.new(unit * cellData[row][col].template.SizeMultiplier.X / 2, 0, 0)
 					local midB = b - Vector3.new(unit * cellData[row][col + 1].template.SizeMultiplier.X / 2, 0, 0)
 					if (midB - midA).Magnitude > 2 then
-						buildConnector(midA, midB, floorFolder)
+						buildConnector(midA, midB, floorFolder, floorIndex)
 					end
 				end
-				-- Connect to bottom neighbor
 				if row < grid and cellData[row + 1] and cellData[row + 1][col] then
 					local a = cellData[row][col].origin
 					local b = cellData[row + 1][col].origin
 					local midA = a + Vector3.new(0, 0, unit * cellData[row][col].template.SizeMultiplier.Z / 2)
 					local midB = b - Vector3.new(0, 0, unit * cellData[row + 1][col].template.SizeMultiplier.Z / 2)
 					if (midB - midA).Magnitude > 2 then
-						buildConnector(midA, midB, floorFolder)
+						buildConnector(midA, midB, floorFolder, floorIndex)
 					end
 				end
 			end
 		end
 	end
 
-	-- Create a SpawnLocation in the elevator
+	-- SpawnLocation on floor 1
 	local elevRow = math.ceil(grid / 2)
 	local elevCol = math.ceil(grid / 2)
 	if cellData[elevRow] and cellData[elevRow][elevCol] then
@@ -492,7 +676,75 @@ local function generateFloor(floorIndex, rng)
 		end
 	end
 
+	loadedFloors[floorIndex] = floorFolder
+	print("[MapGenerator] Floor", floorIndex, "generated. Theme:", getFloorTheme(floorIndex).Name)
 	return floorFolder
+end
+
+---------------------------------------------------------------------------
+-- UNLOAD FLOOR (lazy loading)
+---------------------------------------------------------------------------
+local function unloadFloor(floorIndex)
+	local folder = loadedFloors[floorIndex]
+	if folder then
+		folder:Destroy()
+		loadedFloors[floorIndex] = nil
+		print("[MapGenerator] Floor", floorIndex, "unloaded.")
+	end
+end
+
+---------------------------------------------------------------------------
+-- GET PLAYER'S CURRENT FLOOR
+---------------------------------------------------------------------------
+local function getPlayerFloor(player)
+	local char = player.Character
+	if not char then return 1 end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return 1 end
+
+	local y = root.Position.Y
+	-- Floor 1 is at Y=0, Floor 2 at Y=-50, etc.
+	local floorIndex = math.floor(-y / MC.FloorSeparation) + 1
+	return math.clamp(floorIndex, 1, MC.FloorsToGenerate)
+end
+
+---------------------------------------------------------------------------
+-- LAZY FLOOR MANAGER
+---------------------------------------------------------------------------
+local function updateLoadedFloors()
+	-- Find the deepest floor any player is on
+	local deepestFloor = 1
+	for _, player in ipairs(Players:GetPlayers()) do
+		local pFloor = getPlayerFloor(player)
+		if pFloor > deepestFloor then
+			deepestFloor = pFloor
+		end
+	end
+
+	local range = MC.ActiveFloorRange
+	local minFloor = math.max(1, deepestFloor - range)
+	local maxFloor = math.min(MC.FloorsToGenerate, deepestFloor + range)
+
+	-- Generate floors that should be loaded
+	for i = minFloor, maxFloor do
+		if not loadedFloors[i] then
+			-- Create a deterministic RNG for this floor
+			local floorRng = Random.new(floorSeeds[i])
+			generateFloor(i, floorRng)
+		end
+	end
+
+	-- Unload floors outside the range
+	for idx, _ in pairs(loadedFloors) do
+		if idx < minFloor or idx > maxFloor then
+			unloadFloor(idx)
+		end
+	end
+
+	-- Set current floor attribute on players
+	for _, player in ipairs(Players:GetPlayers()) do
+		player:SetAttribute("CurrentFloor", getPlayerFloor(player))
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -506,17 +758,21 @@ local function generate()
 	end
 	print("[MapGenerator] Generating with seed:", seed)
 
-	local rng = Random.new(seed)
-
-	-- Store seed as attribute on the map folder so clients can read it
+	masterRng = Random.new(seed)
 	mapFolder:SetAttribute("Seed", seed)
 
+	-- Pre-compute deterministic seeds for each floor
 	for floor = 1, MC.FloorsToGenerate do
-		generateFloor(floor, rng)
-		print("[MapGenerator] Floor", floor, "generated.")
+		floorSeeds[floor] = masterRng:NextInteger(1, 999999)
 	end
 
-	-- Create RemoteEvents for game systems
+	-- Generate initial floors (floor 1 and adjacent)
+	for floor = 1, math.min(1 + MC.ActiveFloorRange, MC.FloorsToGenerate) do
+		local floorRng = Random.new(floorSeeds[floor])
+		generateFloor(floor, floorRng)
+	end
+
+	-- Create RemoteEvents
 	local events = Instance.new("Folder")
 	events.Name = "GameEvents"
 	events.Parent = ReplicatedStorage
@@ -537,7 +793,20 @@ local function generate()
 	aiAlertEvent.Name = "AIAlert"
 	aiAlertEvent.Parent = events
 
-	print("[MapGenerator] All floors and events ready.")
+	local hideEvent = Instance.new("RemoteEvent")
+	hideEvent.Name = "HideEvent"
+	hideEvent.Parent = events
+
+	local breathingFailEvent = Instance.new("RemoteEvent")
+	breathingFailEvent.Name = "BreathingFail"
+	breathingFailEvent.Parent = events
+
+	print("[MapGenerator] Initial floors and events ready. Lazy loading active for", MC.FloorsToGenerate, "floors.")
+
+	-- Start lazy loading loop
+	RunService.Heartbeat:Connect(function()
+		updateLoadedFloors()
+	end)
 end
 
 generate()
