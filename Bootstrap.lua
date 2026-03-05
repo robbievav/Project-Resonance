@@ -203,120 +203,76 @@ ROOMS.Stairwell = {
 }
 
 -----------------------------------------------------------------------
--- FURNITURE BUILDERS
+-- FURNITURE — Clone from ReplicatedStorage.Furniture
 -----------------------------------------------------------------------
-local function buildDesk(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="DeskTop",Size=Vector3.new(5,0.3,2.5),CFrame=CFrame.new(pos+Vector3.new(0,2.5,0))*r,Material=Enum.Material.Wood,Color=Color3.fromRGB(130,100,70),Parent=parent})
-	for _,lx in ipairs({-2.2,2.2}) do for _,lz in ipairs({-1,1}) do
-		mp({Name="DeskLeg",Size=Vector3.new(0.3,2.5,0.3),CFrame=CFrame.new(pos+Vector3.new(lx,1.25,lz))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(90,90,90),Parent=parent})
-	end end
-end
+local FurnitureFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Furniture")
 
-local function buildChair(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="ChairSeat",Size=Vector3.new(2,0.3,2),CFrame=CFrame.new(pos+Vector3.new(0,1.8,0))*r,Material=Enum.Material.Fabric,Color=Color3.fromRGB(60,65,75),Parent=parent})
-	mp({Name="ChairBack",Size=Vector3.new(2,2,0.3),CFrame=CFrame.new(pos+Vector3.new(0,2.8,-1))*r,Material=Enum.Material.Fabric,Color=Color3.fromRGB(60,65,75),Parent=parent})
-end
-
-local function buildFileCab(pos, rot, parent)
-	mp({Name="FilingCabinet",Size=Vector3.new(2,4,1.5),CFrame=CFrame.new(pos+Vector3.new(0,2,0))*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.Metal,Color=Color3.fromRGB(110,110,105),Parent=parent})
-end
-
-local function buildWaterCooler(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="WaterCoolerBody",Size=Vector3.new(1.2,3.5,1.2),CFrame=CFrame.new(pos+Vector3.new(0,1.75,0))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(200,200,195),Parent=parent})
-	local jug = mp({Name="WaterJug",Size=Vector3.new(0.8,1.2,0.8),CFrame=CFrame.new(pos+Vector3.new(0,4.1,0))*r,Material=Enum.Material.Glass,Color=Color3.fromRGB(140,180,210),Parent=parent})
-	jug.Transparency = 0.4
-end
-
-local function buildBarrel(pos, rot, parent)
-	mp({Name="Barrel",Size=Vector3.new(2,3,2),CFrame=CFrame.new(pos+Vector3.new(0,1.5,0))*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.Metal,Color=C.Rust,Parent=parent})
-end
-
-local function buildToolBox(pos, rot, parent)
-	mp({Name="ToolBox",Size=Vector3.new(2,1,1),CFrame=CFrame.new(pos+Vector3.new(0,0.5,0))*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.Metal,Color=Color3.fromRGB(180,50,40),Parent=parent})
-end
-
-local function buildConsole(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="ConsoleDeck",Size=Vector3.new(4,2.5,2),CFrame=CFrame.new(pos+Vector3.new(0,1.25,0))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(70,70,75),Parent=parent})
-	local scr = mp({Name="ConsoleScreen",Size=Vector3.new(3,2,0.2),CFrame=CFrame.new(pos+Vector3.new(0,3.5,-0.8))*r*CFrame.Angles(math.rad(-15),0,0),Material=Enum.Material.Neon,Color=Color3.fromRGB(30,80,50),Parent=parent})
-	scr.Transparency = 0.2
-end
-
-local function buildCot(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="CotFrame",Size=Vector3.new(3,0.8,6),CFrame=CFrame.new(pos+Vector3.new(0,0.4,0))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(90,90,90),Parent=parent})
-	mp({Name="CotMattress",Size=Vector3.new(2.6,0.4,5.6),CFrame=CFrame.new(pos+Vector3.new(0,1,0))*r,Material=Enum.Material.Fabric,Color=Color3.fromRGB(120,130,120),Parent=parent})
-end
-
-local function buildMedKit(pos, rot, parent)
-	local kit = mp({Name="MedKit",Size=Vector3.new(1.5,1,0.5),CFrame=CFrame.new(pos)*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(200,200,200),Parent=parent})
-	local pp = Instance.new("ProximityPrompt"); pp.ActionText="Take"; pp.ObjectText="Med Kit"; pp.MaxActivationDistance=6; pp.Parent=kit
-end
-
-local function buildLocker(pos, rot, parent)
-	mp({Name="Locker",Size=Vector3.new(1.5,6,2),CFrame=CFrame.new(pos+Vector3.new(0,3,0))*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.Metal,Color=Color3.fromRGB(95,100,95),Parent=parent})
-end
-
-local function buildElevatorPanel(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="ElevatorPanel",Size=Vector3.new(0.3,1.5,1),CFrame=CFrame.new(pos)*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(70,70,75),Parent=parent})
-	mp({Name="ElevatorButton",Size=Vector3.new(0.35,0.3,0.3),CFrame=CFrame.new(pos+Vector3.new(-0.05,0.3,0))*r,Material=Enum.Material.Neon,Color=Color3.fromRGB(200,60,40),Parent=parent})
-end
-
-local function buildShelfUnit(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="ShelfFrame",Size=Vector3.new(1.5,8,4),CFrame=CFrame.new(pos+Vector3.new(0,4,0))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(90,90,85),Parent=parent})
-	for _,sy in ipairs({1.5,3.5,5.5,7.5}) do
-		mp({Name="Shelf",Size=Vector3.new(2,0.2,4),CFrame=CFrame.new(pos+Vector3.new(0,sy,0))*r,Material=Enum.Material.Wood,Color=Color3.fromRGB(110,95,70),Parent=parent})
-	end
-end
-
-local function buildCrate(pos, rot, parent)
-	mp({Name="Crate",Size=Vector3.new(3,2.5,3),CFrame=CFrame.new(pos+Vector3.new(0,1.25,0))*CFrame.Angles(0,math.rad(rot),0),Material=Enum.Material.Wood,Color=C.Crate,Parent=parent})
-end
-
-local function buildLabBench(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="LabBenchTop",Size=Vector3.new(6,0.3,3),CFrame=CFrame.new(pos+Vector3.new(0,2.8,0))*r,Material=Enum.Material.SmoothPlastic,Color=C.LabBench,Parent=parent})
-	for _,lx in ipairs({-2.5,2.5}) do for _,lz in ipairs({-1.2,1.2}) do
-		mp({Name="LabBenchLeg",Size=Vector3.new(0.3,2.8,0.3),CFrame=CFrame.new(pos+Vector3.new(lx,1.4,lz))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(80,80,80),Parent=parent})
-	end end
-	mp({Name="Beaker",Size=Vector3.new(0.4,0.8,0.4),CFrame=CFrame.new(pos+Vector3.new(1,3.3,0))*r,Material=Enum.Material.Glass,Color=Color3.fromRGB(180,200,180),Parent=parent})
-end
-
-local function buildBathroomStall(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="StallWallL",Size=Vector3.new(0.2,5,4),CFrame=CFrame.new(pos+Vector3.new(-1.5,2.5,0))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(180,180,175),Parent=parent})
-	mp({Name="StallWallR",Size=Vector3.new(0.2,5,4),CFrame=CFrame.new(pos+Vector3.new(1.5,2.5,0))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(180,180,175),Parent=parent})
-	mp({Name="StallDoor",Size=Vector3.new(2.8,4,0.15),CFrame=CFrame.new(pos+Vector3.new(0,2,-2))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(170,170,165),Parent=parent})
-	mp({Name="Toilet",Size=Vector3.new(1.2,1.5,1.5),CFrame=CFrame.new(pos+Vector3.new(0,0.75,1))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(230,230,225),Parent=parent})
-end
-
-local function buildBathroomSink(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="SinkCounter",Size=Vector3.new(0.5,2.5,6),CFrame=CFrame.new(pos+Vector3.new(0,1.25,0))*r,Material=Enum.Material.SmoothPlastic,Color=Color3.fromRGB(200,200,195),Parent=parent})
-	local mir = mp({Name="Mirror",Size=Vector3.new(0.1,3,5),CFrame=CFrame.new(pos+Vector3.new(-0.1,4,0))*r,Material=Enum.Material.Glass,Color=Color3.fromRGB(150,160,170),Parent=parent})
-	mir.Transparency = 0.3; mir.Reflectance = 0.4
-end
-
-local function buildServerRack(pos, rot, parent)
-	local r = CFrame.Angles(0,math.rad(rot),0)
-	mp({Name="ServerRackBody",Size=Vector3.new(2,8,3),CFrame=CFrame.new(pos+Vector3.new(0,4,0))*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(30,30,35),Parent=parent})
-	for i=1,5 do
-		mp({Name="ServerLED",Size=Vector3.new(0.1,0.15,0.15),CFrame=CFrame.new(pos+Vector3.new(-1.05,1.5+i*1.1,0.5))*r,Material=Enum.Material.Neon,Color=Color3.fromRGB(30,120,200),Parent=parent})
-	end
-end
-
-local BUILDERS = {
-	Desk=buildDesk, Chair=buildChair, FileCab=buildFileCab, WaterCooler=buildWaterCooler,
-	Barrel=buildBarrel, ToolBox=buildToolBox, Console=buildConsole, Cot=buildCot,
-	MedKit=buildMedKit, Locker=buildLocker, ElevatorPanel=buildElevatorPanel,
-	ShelfUnit=buildShelfUnit, Crate=buildCrate, LabBench=buildLabBench,
-	BathroomStall=buildBathroomStall, BathroomSink=buildBathroomSink, ServerRack=buildServerRack,
+-- Map internal type names → model names inside ReplicatedStorage.Furniture
+local FURNITURE_MAP = {
+	Desk         = "work station",
+	Chair        = "Chair - pemble08",
+	FileCab      = "cabinet 1",
+	WaterCooler  = "Refridgerator",
+	Barrel       = "cabinet 3",
+	ToolBox      = "small safe",
+	Console      = "work station",
+	Cot          = "couch",
+	MedKit       = "small safe",
+	Locker       = "cabinet 2",
+	ShelfUnit    = "shelf1",
+	Crate        = "cabinet 4",
+	LabBench     = "dinner table",
+	BathroomSink = "bathroom sink",
+	ServerRack   = "cabinet 4",
+	BathroomStall = "cabinet 3",  -- closest tall piece
 }
+
+local function cloneFurniture(typeName, pos, rot, parent)
+	-- Special case: ElevatorPanel is game-specific (neon button)
+	if typeName == "ElevatorPanel" then
+		local r = CFrame.Angles(0, math.rad(rot), 0)
+		mp({Name="ElevatorPanel",Size=Vector3.new(0.3,1.5,1),CFrame=CFrame.new(pos)*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(70,70,75),Parent=parent})
+		mp({Name="ElevatorButton",Size=Vector3.new(0.35,0.3,0.3),CFrame=CFrame.new(pos+Vector3.new(-0.05,0.3,0))*r,Material=Enum.Material.Neon,Color=Color3.fromRGB(200,60,40),Parent=parent})
+		return
+	end
+
+	local modelName = FURNITURE_MAP[typeName]
+	if not modelName or not FurnitureFolder then return end
+
+	local template = FurnitureFolder:FindFirstChild(modelName)
+	if not template then
+		warn("[Bootstrap] Furniture model not found:", modelName, "for type", typeName)
+		return
+	end
+
+	local clone = template:Clone()
+	clone.Name = typeName
+
+	-- Position and rotate the model
+	if clone:IsA("Model") then
+		if clone.PrimaryPart then
+			clone:SetPrimaryPartCFrame(CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0))
+		else
+			-- If no PrimaryPart, set one
+			local firstPart = clone:FindFirstChildWhichIsA("BasePart", true)
+			if firstPart then
+				clone.PrimaryPart = firstPart
+				clone:SetPrimaryPartCFrame(CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0))
+			end
+		end
+	elseif clone:IsA("BasePart") then
+		clone.CFrame = CFrame.new(pos) * CFrame.Angles(0, math.rad(rot), 0)
+	end
+
+	-- Anchor all parts so they don't fall
+	for _, part in ipairs(clone:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+		end
+	end
+
+	clone.Parent = parent
+end
 
 -----------------------------------------------------------------------
 -- ROOM BUILDER
@@ -408,11 +364,10 @@ local function buildRoom(template, origin, floorFolder, floorIdx)
 		end
 	end
 
-	-- Furniture
+	-- Furniture (clone from ReplicatedStorage.Furniture)
 	for _, f in ipairs(template.Furniture) do
 		local fPos = origin + f.Offset
-		local builder = BUILDERS[f.Type]
-		if builder then builder(fPos, f.Rotation, roomFolder) end
+		cloneFurniture(f.Type, fPos, f.Rotation, roomFolder)
 	end
 
 	-- Hiding Spots
