@@ -191,7 +191,7 @@ RoomTemplates.Elevator = {
 		fixture("DimBulb", 0, 14, 0),
 	},
 	Furniture = {
-		fixture("ElevatorPanel", 3, 4, 2, 90),
+		fixture("ElevatorPanel", 5.85, 3, 0, 90),
 	},
 	HidingSpots = {},
 }

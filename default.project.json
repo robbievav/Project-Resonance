@@ -27,20 +27,20 @@
     "Lighting": {
       "$properties": {
         "Ambient": [
-          0.02,
-          0.02,
-          0.03
+          0.5,
+          0.5,
+          0.5
         ],
         "OutdoorAmbient": [
-          0,
-          0,
-          0
+          0.5,
+          0.5,
+          0.5
         ],
-        "Brightness": 0.3,
+        "Brightness": 2,
         "GlobalShadows": true,
         "Outlines": false,
         "Technology": "ShadowMap",
-        "ClockTime": 0,
+        "ClockTime": 14,
         "GeographicLatitude": 0,
         "EnvironmentDiffuseScale": 0.2,
         "EnvironmentSpecularScale": 0.1,
