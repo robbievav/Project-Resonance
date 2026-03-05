@@ -85,16 +85,7 @@ local barY = 0
 ---------------------------------------------------------------------------
 -- PARENT GUI
 ---------------------------------------------------------------------------
-local function onPlayerGui()
-	vhsGui.Parent = player:WaitForChild("PlayerGui")
-end
-
-if player:FindFirstChild("PlayerGui") then
-	onPlayerGui()
-else
-	player:GetPropertyChangedSignal("PlayerGui"):Wait()
-	onPlayerGui()
-end
+vhsGui.Parent = player:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------------------------
 -- FLICKERING LIGHTS

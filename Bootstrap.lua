@@ -120,27 +120,27 @@ ROOMS.Office = {
 	Name="Office", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
-	Furniture={fix("Desk",-7,0,-5,0), fix("Desk",5,0,-5,180),
-		fix("FileCab",9,0,-9,0), fix("FileCab",9,0,9,0),
-		fix("Chair",-5,0,-5,30), fix("Chair",3,0,-5,-30),
-		fix("WaterCooler",9,0,0,0)},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-7,0,-5),Rot=0},{Type="UnderDesk",Off=Vector3.new(5,0,-5),Rot=180}},
+	Furniture={fix("Desk",-8,0,-6,0), fix("Desk",8,0,-6,180),
+		fix("FileCab",10,0,-10,0), fix("FileCab",10,0,10,0),
+		fix("Chair",-8,0,-4,0), fix("Chair",8,0,-4,0),
+		fix("WaterCooler",10,0,0,0)},
+	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-8,0,-6),Rot=0},{Type="UnderDesk",Off=Vector3.new(8,0,-6),Rot=180}},
 }
 
 ROOMS.MaintenanceTunnel = {
 	Name="MaintenanceTunnel", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,-5), fix("DimBulb",0,11,5), fix("Pipe",-3,11,0), fix("Pipe",3,11,0)},
-	Furniture={fix("Barrel",7,0,-7), fix("ToolBox",-7,0,7)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-8,0,0),Rot=0}},
+	Furniture={fix("Barrel",8,0,-8), fix("ToolBox",-8,0,8)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(-9,0,0),Rot=0}},
 }
 
 ROOMS.ObservationDeck = {
 	Name="ObservationDeck", FloorMat="Marble", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
-	Furniture={fix("Console",-7,0,-5,0), fix("Console",-7,0,5,0),
-		fix("Chair",-4,0,-5,0), fix("Chair",-4,0,5,0)},
+	Furniture={fix("Console",-9,0,-7,0), fix("Console",-9,0,7,0),
+		fix("Chair",-6,0,-7,0), fix("Chair",-6,0,7,0)},
 	HidingSpots={},
 }
 
@@ -148,43 +148,43 @@ ROOMS.SafeHub = {
 	Name="SafeHub", FloorMat="Marble", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel, IsSafe=true,
 	Fixtures={fix("Fluor",-4,11.5,-4), fix("Fluor",4,11.5,4)},
-	Furniture={fix("Desk",-7,0,-7,0), fix("Cot",7,0,6,0), fix("MedKit",-7,3,7,0), fix("Locker",-9,0,3,-90)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-9,0,3),Rot=-90}},
+	Furniture={fix("Desk",-8,0,-8,0), fix("Cot",8,0,7,0), fix("MedKit",-8,3,8,0), fix("Locker",-10,0,4,-90)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(-10,0,4),Rot=-90}},
 }
 
 ROOMS.StorageRoom = {
 	Name="StorageRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={fix("ShelfUnit",-9,0,-7,0), fix("ShelfUnit",-9,0,3,0), fix("ShelfUnit",9,0,-7,180),
-		fix("Crate",3,0,-7,15), fix("Crate",6,0,-5,-10), fix("Barrel",-4,0,8,0), fix("Locker",9,0,7,180)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(9,0,7),Rot=180},{Type="ShelfCrawl",Off=Vector3.new(-9,0,0),Rot=0}},
+	Furniture={fix("ShelfUnit",-10,0,-8,0), fix("ShelfUnit",-10,0,4,0), fix("ShelfUnit",10,0,-8,180),
+		fix("Crate",4,0,-8,15), fix("Crate",7,0,-6,-10), fix("Barrel",-5,0,9,0), fix("Locker",10,0,8,180)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(10,0,8),Rot=180},{Type="ShelfCrawl",Off=Vector3.new(-10,0,-2),Rot=0}},
 }
 
 ROOMS.Laboratory = {
 	Name="Laboratory", FloorMat="Marble", FloorCol=C.LabWhite,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
-	Furniture={fix("LabBench",-8,0,-6,0), fix("LabBench",-8,0,5,0), fix("LabBench",5,0,-6,180),
-		fix("FileCab",9,0,-9,0), fix("Chair",-5,0,-6,30), fix("Chair",3,0,-6,-30)},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-8,0,5),Rot=0}},
+	Furniture={fix("LabBench",-9,0,-7,0), fix("LabBench",-9,0,6,0), fix("LabBench",6,0,-7,180),
+		fix("FileCab",10,0,-10,0), fix("Chair",-6,0,-7,30), fix("Chair",4,0,-7,-30)},
+	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-9,0,6),Rot=0}},
 }
 
 ROOMS.Bathroom = {
 	Name="Bathroom", FloorMat="Marble", FloorCol=C.TileWhite,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0), fix("Pipe",-5,11,0)},
-	Furniture={fix("BathroomStall",-7,0,-5,0), fix("BathroomStall",-7,0,5,0), fix("BathroomStall",0,0,-5,0), fix("BathroomSink",8,0,0,90)},
-	HidingSpots={{Type="StallHide",Off=Vector3.new(-7,0,5),Rot=0},{Type="StallHide",Off=Vector3.new(0,0,-5),Rot=0}},
+	Furniture={fix("BathroomStall",-8,0,-6,0), fix("BathroomStall",-8,0,6,0), fix("BathroomStall",0,0,-6,0), fix("BathroomSink",9,0,0,90)},
+	HidingSpots={{Type="StallHide",Off=Vector3.new(-8,0,6),Rot=0},{Type="StallHide",Off=Vector3.new(0,0,-6),Rot=0}},
 }
 
 ROOMS.ServerRoom = {
 	Name="ServerRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-6,11,4), fix("Pipe",6,11,4)},
-	Furniture={fix("ServerRack",-9,0,-7,0), fix("ServerRack",-9,0,0,0), fix("ServerRack",-9,0,7,0),
-		fix("ServerRack",9,0,-7,180), fix("ServerRack",9,0,0,180), fix("ServerRack",9,0,7,180), fix("Console",0,0,9,0)},
-	HidingSpots={{Type="RackGap",Off=Vector3.new(-9,0,3.5),Rot=0},{Type="RackGap",Off=Vector3.new(9,0,3.5),Rot=180}},
+	Furniture={fix("ServerRack",-10,0,-8,0), fix("ServerRack",-10,0,0,0), fix("ServerRack",-10,0,8,0),
+		fix("ServerRack",10,0,-8,180), fix("ServerRack",10,0,0,180), fix("ServerRack",10,0,8,180), fix("Console",0,0,10,0)},
+	HidingSpots={{Type="RackGap",Off=Vector3.new(-10,0,4),Rot=0},{Type="RackGap",Off=Vector3.new(10,0,4),Rot=180}},
 }
 
 ROOMS.Elevator = {
@@ -256,7 +256,9 @@ end
 
 -- Get the lowest Y point of a model (for grounding)
 local function getModelBounds(model)
-	if model:IsA("Model") then
+	if model:IsA("Model") and model.PrimaryPart then
+		return model.PrimaryPart.CFrame, model.PrimaryPart.Size
+	elseif model:IsA("Model") then
 		local cf, size = model:GetBoundingBox()
 		return cf, size
 	elseif model:IsA("BasePart") then
@@ -304,22 +306,19 @@ local function cloneFurniture(typeName, pos, rot, parent)
 	-- Apply scaling
 	scaleModel(clone, info.Scale)
 
-	-- Get bounding box to calculate floor grounding
-	local bbCF, bbSize = getModelBounds(clone)
-	local bottomY = bbCF.Position.Y - bbSize.Y / 2  -- lowest point of model
-	local groundOffset = -bottomY  -- how much to raise so bottom is at Y=0
-
 	-- Final rotation = room rotation + any model-specific rotation fix
 	local finalRot = rot + info.RotFix
 
-	-- Calculate final position: place at target pos, grounded on floor
-	local finalPos = Vector3.new(pos.X, pos.Y + groundOffset, pos.Z)
-
-	-- Move the model to final position with rotation
-	if clone:IsA("Model") then
-		-- First move to final pos
+	local finalPos
+	if clone:IsA("Model") and clone.PrimaryPart then
+		finalPos = Vector3.new(pos.X, pos.Y + clone.PrimaryPart.Size.Y / 2, pos.Z)
+		clone:SetPrimaryPartCFrame(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
+	elseif clone:IsA("Model") then
+		local cf, size = clone:GetBoundingBox()
+		finalPos = Vector3.new(pos.X, pos.Y + size.Y / 2, pos.Z)
 		clone:SetPrimaryPartCFrame(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
 	elseif clone:IsA("BasePart") then
+		finalPos = Vector3.new(pos.X, pos.Y + clone.Size.Y / 2, pos.Z)
 		clone.CFrame = CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0)
 	end
 
@@ -330,9 +329,9 @@ end
 -----------------------------------------------------------------------
 -- ROOM BUILDER
 -- Every room is exactly ROOM_UNIT x ROOM_UNIT (24x24x12).
--- Doors on all 4 walls, centered.
+-- Doors on all 4 walls, ONLY if connection exists.
 -----------------------------------------------------------------------
-local function buildRoom(template, origin, floorFolder, floorIdx)
+local function buildRoom(template, origin, floorFolder, floorIdx, connections)
 	local sx = ROOM_UNIT
 	local sz = ROOM_UNIT
 	local height = WALL_HEIGHT
@@ -357,49 +356,53 @@ local function buildRoom(template, origin, floorFolder, floorIdx)
 	local dOff = 0  -- all doors centered
 
 	local walls = {
-		{side="PosX", isZ=false, size=Vector3.new(thick,height,sz), pos=Vector3.new(sx/2,height/2,0)},
-		{side="NegX", isZ=false, size=Vector3.new(thick,height,sz), pos=Vector3.new(-sx/2,height/2,0)},
-		{side="PosZ", isZ=true,  size=Vector3.new(sx,height,thick), pos=Vector3.new(0,height/2,sz/2)},
-		{side="NegZ", isZ=true,  size=Vector3.new(sx,height,thick), pos=Vector3.new(0,height/2,-sz/2)},
+		{side="PosX", isZ=false, size=Vector3.new(thick,height,sz), pos=Vector3.new(sx/2,height/2,0), hasDoor=connections and connections.East},
+		{side="NegX", isZ=false, size=Vector3.new(thick,height,sz), pos=Vector3.new(-sx/2,height/2,0), hasDoor=connections and connections.West},
+		{side="PosZ", isZ=true,  size=Vector3.new(sx,height,thick), pos=Vector3.new(0,height/2,sz/2), hasDoor=connections and connections.South},
+		{side="NegZ", isZ=true,  size=Vector3.new(sx,height,thick), pos=Vector3.new(0,height/2,-sz/2), hasDoor=connections and connections.North},
 	}
 
 	for _, w in ipairs(walls) do
-		local aboveH = height - dh
+		local curDW = w.hasDoor and dw or 0
+		local curDH = w.hasDoor and dh or 0
+		local aboveH = height - curDH
 		-- Wall above the door
 		if aboveH > 0 then
 			if w.isZ then
-				mp({Name="WallAbove",Size=Vector3.new(dw,aboveH,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,(height-aboveH)/2,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallAbove",Size=Vector3.new(curDW,aboveH,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,(height-aboveH)/2,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			else
-				mp({Name="WallAbove",Size=Vector3.new(thick,aboveH,dw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,(height-aboveH)/2,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallAbove",Size=Vector3.new(thick,aboveH,curDW),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,(height-aboveH)/2,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			end
 		end
 		-- Wall left of door
 		local sideLen = w.isZ and sx or sz
-		local lw = sideLen/2 + dOff - dw/2
-		local rw = sideLen/2 - dOff - dw/2
+		local lw = sideLen/2 + dOff - curDW/2
+		local rw = sideLen/2 - dOff - curDW/2
 		if lw > 0.1 then
 			if w.isZ then
-				mp({Name="WallLeft",Size=Vector3.new(lw,height,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(-dw/2-lw/2,0,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallLeft",Size=Vector3.new(lw,height,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(-curDW/2-lw/2,0,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			else
-				mp({Name="WallLeft",Size=Vector3.new(thick,height,lw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,0,-dw/2-lw/2)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallLeft",Size=Vector3.new(thick,height,lw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,0,-curDW/2-lw/2)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			end
 		end
 		if rw > 0.1 then
 			if w.isZ then
-				mp({Name="WallRight",Size=Vector3.new(rw,height,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(dw/2+rw/2,0,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallRight",Size=Vector3.new(rw,height,thick),CFrame=CFrame.new(origin+w.pos+Vector3.new(curDW/2+rw/2,0,0)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			else
-				mp({Name="WallRight",Size=Vector3.new(thick,height,rw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,0,dw/2+rw/2)),Material=wallMat,Color=wallColor,Parent=roomFolder})
+				mp({Name="WallRight",Size=Vector3.new(thick,height,rw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,0,curDW/2+rw/2)),Material=wallMat,Color=wallColor,Parent=roomFolder})
 			end
 		end
 		-- Door part
-		local dp
-		if w.isZ then
-			dp = mp({Name="Door",Size=Vector3.new(dw,dh,thick*0.5),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,-(height-dh)/2,0)),Material=Enum.Material.Wood,Color=C.DoorFrame,Parent=roomFolder})
-		else
-			dp = mp({Name="Door",Size=Vector3.new(thick*0.5,dh,dw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,-(height-dh)/2,0)),Material=Enum.Material.Wood,Color=C.DoorFrame,Parent=roomFolder})
+		if w.hasDoor then
+			local dp
+			if w.isZ then
+				dp = mp({Name="Door",Size=Vector3.new(dw,dh,thick*0.5),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,-(height-dh)/2,0)),Material=Enum.Material.Wood,Color=C.DoorFrame,Parent=roomFolder})
+			else
+				dp = mp({Name="Door",Size=Vector3.new(thick*0.5,dh,dw),CFrame=CFrame.new(origin+w.pos+Vector3.new(0,-(height-dh)/2,0)),Material=Enum.Material.Wood,Color=C.DoorFrame,Parent=roomFolder})
+			end
+			local pp = Instance.new("ProximityPrompt"); pp.ActionText="Open"; pp.ObjectText="Door"; pp.MaxActivationDistance=8; pp.HoldDuration=0.3; pp.Parent=dp
+			local tg = Instance.new("StringValue"); tg.Name="DoorTag"; tg.Value=template.Name; tg.Parent=dp
 		end
-		local pp = Instance.new("ProximityPrompt"); pp.ActionText="Open"; pp.ObjectText="Door"; pp.MaxActivationDistance=8; pp.HoldDuration=0.3; pp.Parent=dp
-		local tg = Instance.new("StringValue"); tg.Name="DoorTag"; tg.Value=template.Name; tg.Parent=dp
 	end
 
 	-- Fixtures
@@ -439,8 +442,8 @@ end
 -----------------------------------------------------------------------
 -- STAIRWELL BUILDER
 -----------------------------------------------------------------------
-local function buildStairwell(origin, floorIdx, floorFolder)
-	buildRoom(ROOMS.Stairwell, origin, floorFolder, floorIdx)
+local function buildStairwell(origin, floorIdx, floorFolder, connections)
+	local roomF = buildRoom(ROOMS.Stairwell, origin, floorFolder, floorIdx, connections)
 	local stairF = Instance.new("Folder"); stairF.Name="Stairs_"..floorIdx; stairF.Parent=floorFolder
 	local numSteps = 16
 	local stepH = FLOOR_SEP / numSteps
@@ -452,6 +455,7 @@ local function buildStairwell(origin, floorIdx, floorFolder)
 		mp({Name="Step_"..i,Size=Vector3.new(3,0.5,2),CFrame=CFrame.new(origin+Vector3.new(x,y-0.25,z))*CFrame.Angles(0,-angle,0),Material=Enum.Material.Concrete,Color=C.DarkConcrete,Parent=stairF})
 		mp({Name="Railing_"..i,Size=Vector3.new(0.2,3,0.2),CFrame=CFrame.new(origin+Vector3.new(x+math.cos(angle)*1.5,y+1.25,z+math.sin(angle)*1.5)),Material=Enum.Material.Metal,Color=C.MetalGrate,Parent=stairF})
 	end
+	return roomF
 end
 
 -----------------------------------------------------------------------
@@ -506,12 +510,27 @@ local function generateFloor(floorIdx, rng, mapFolder)
 
 			local tmpl = ROOMS[tName]
 			if tmpl then
-				if tName == "Stairwell" then
-					buildStairwell(origin, floorIdx, ff)
+				cellData[row][col] = { origin = origin, name = tName, template = tmpl }
+			end
+		end
+	end
+
+	-- Now build the rooms because we know where neighbors are
+	for row = 1, GRID_SIZE do
+		for col = 1, GRID_SIZE do
+			local cell = cellData[row][col]
+			if cell then
+				local connections = {
+					North = cellData[row - 1] and cellData[row - 1][col] ~= nil,
+					South = cellData[row + 1] and cellData[row + 1][col] ~= nil,
+					West = cellData[row][col - 1] ~= nil,
+					East = cellData[row][col + 1] ~= nil,
+				}
+				if cell.name == "Stairwell" then
+					buildStairwell(cell.origin, floorIdx, ff, connections)
 				else
-					buildRoom(tmpl, origin, ff, floorIdx)
+					buildRoom(cell.template, cell.origin, ff, floorIdx, connections)
 				end
-				cellData[row][col] = { origin = origin }
 			end
 		end
 	end
