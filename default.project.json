@@ -2,25 +2,21 @@
   "name": "ProjectResonance",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
       }
     },
-
     "ServerScriptService": {
       "Server": {
         "$path": "src/server"
       }
     },
-
     "ServerStorage": {
       "Assets": {
         "$path": "assets"
       }
     },
-
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "Client": {
@@ -28,28 +24,43 @@
         }
       }
     },
-
     "Lighting": {
       "$properties": {
-        "Ambient": [0.02, 0.02, 0.03],
-        "OutdoorAmbient": [0, 0, 0],
+        "Ambient": [
+          0.02,
+          0.02,
+          0.03
+        ],
+        "OutdoorAmbient": [
+          0,
+          0,
+          0
+        ],
         "Brightness": 0.3,
         "GlobalShadows": true,
         "Outlines": false,
-        "Technology": "Future",
+        "Technology": "ShadowMap",
         "ClockTime": 0,
         "GeographicLatitude": 0,
         "EnvironmentDiffuseScale": 0.2,
         "EnvironmentSpecularScale": 0.1,
-        "ExposureCompensation": -0.5
+        "ExposureCompensation": 0
       },
       "Atmosphere": {
         "$className": "Atmosphere",
         "$properties": {
           "Density": 0.35,
           "Offset": 0.1,
-          "Color": [85, 90, 100],
-          "Decay": [30, 35, 45],
+          "Color": [
+            85,
+            90,
+            100
+          ],
+          "Decay": [
+            30,
+            35,
+            45
+          ],
           "Glare": 0,
           "Haze": 8
         }
@@ -60,15 +71,19 @@
           "Brightness": -0.05,
           "Contrast": 0.15,
           "Saturation": -0.4,
-          "TintColor": [235, 225, 200]
+          "TintColor": [
+            235,
+            225,
+            200
+          ]
         }
       },
       "BloomEffect": {
         "$className": "BloomEffect",
         "$properties": {
-          "Intensity": 0.4,
-          "Size": 18,
-          "Threshold": 1.2
+          "Intensity": 0.15,
+          "Size": 12,
+          "Threshold": 2.5
         }
       },
       "DamageBlur": {
@@ -79,13 +94,11 @@
         }
       }
     },
-
     "Workspace": {
       "$properties": {
         "FilteringEnabled": true
       }
     },
-
     "SoundService": {
       "$properties": {
         "RespectFilteringEnabled": true
