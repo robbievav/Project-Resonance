@@ -519,14 +519,22 @@ local function generateFloor(floorIdx, rng, mapFolder)
 			end
 		end
 	end end
-	-- Spawn on floor 1
+	-- Spawn on floor 1 — inside the elevator room
 	if floorIdx==1 then
 		local eR,eC = math.ceil(GRID_SIZE/2), math.ceil(GRID_SIZE/2)
 		if cellData[eR] and cellData[eR][eC] then
+			local spawnOrigin = cellData[eR][eC].origin
+			-- Delete any existing SpawnLocations in the workspace
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("SpawnLocation") and obj.Name ~= "ElevatorSpawn" then
+					obj:Destroy()
+				end
+			end
 			local sp = Instance.new("SpawnLocation")
 			sp.Anchored=true; sp.CanCollide=true; sp.Size=Vector3.new(4,1,4)
-			sp.CFrame=CFrame.new(cellData[eR][eC].origin+Vector3.new(0,0.5,0))
+			sp.CFrame=CFrame.new(spawnOrigin + Vector3.new(0, 3, 0))
 			sp.TopSurface=Enum.SurfaceType.Smooth; sp.Transparency=1; sp.Name="ElevatorSpawn"; sp.Parent=ff
+			print("[Bootstrap] Spawn placed INSIDE elevator room at:", spawnOrigin + Vector3.new(0, 3, 0))
 		end
 	end
 	return ff
