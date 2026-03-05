@@ -120,27 +120,27 @@ ROOMS.Office = {
 	Name="Office", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
-	Furniture={fix("Desk",-6,0,-4,0), fix("Desk",4,0,-4,180),
-		fix("FileCab",7,0,-7,90), fix("FileCab",7,0,7,90),
-		fix("Chair",-4,0,-4,30), fix("Chair",-4,0,4,-20),
-		fix("WaterCooler",7,0,0,-90)},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-6,0,-4),Rot=0},{Type="UnderDesk",Off=Vector3.new(4,0,-4),Rot=180}},
+	Furniture={fix("Desk",-7,0,-5,0), fix("Desk",5,0,-5,180),
+		fix("FileCab",9,0,-9,0), fix("FileCab",9,0,9,0),
+		fix("Chair",-5,0,-5,30), fix("Chair",3,0,-5,-30),
+		fix("WaterCooler",9,0,0,0)},
+	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-7,0,-5),Rot=0},{Type="UnderDesk",Off=Vector3.new(5,0,-5),Rot=180}},
 }
 
 ROOMS.MaintenanceTunnel = {
 	Name="MaintenanceTunnel", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,-4), fix("DimBulb",0,11,4), fix("Pipe",-2,11,0), fix("Pipe",2,11,0)},
-	Furniture={fix("Barrel",4,0,-4), fix("ToolBox",-4,0,5)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-5,0,-6),Rot=0}},
+	Fixtures={fix("DimBulb",0,11,-5), fix("DimBulb",0,11,5), fix("Pipe",-3,11,0), fix("Pipe",3,11,0)},
+	Furniture={fix("Barrel",7,0,-7), fix("ToolBox",-7,0,7)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(-8,0,0),Rot=0}},
 }
 
 ROOMS.ObservationDeck = {
 	Name="ObservationDeck", FloorMat="Marble", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0), fix("Window",10,5,0,90)},
-	Furniture={fix("Console",-4,0,-3,0), fix("Console",-4,0,3,0),
-		fix("Chair",-2,0,-3,0), fix("Chair",-2,0,3,0)},
+	Fixtures={fix("Fluor",0,11.5,0), fix("Window",11,5,0,90)},
+	Furniture={fix("Console",-7,0,-5,0), fix("Console",-7,0,5,0),
+		fix("Chair",-4,0,-5,0), fix("Chair",-4,0,5,0)},
 	HidingSpots={},
 }
 
@@ -148,50 +148,50 @@ ROOMS.SafeHub = {
 	Name="SafeHub", FloorMat="Marble", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel, IsSafe=true,
 	Fixtures={fix("Fluor",-4,11.5,-4), fix("Fluor",4,11.5,4)},
-	Furniture={fix("Desk",-6,0,-6,0), fix("Cot",6,0,5,0), fix("MedKit",-6,3,6,0), fix("Locker",-8,0,0,-90)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-8,0,0),Rot=-90}},
+	Furniture={fix("Desk",-7,0,-7,0), fix("Cot",7,0,6,0), fix("MedKit",-7,3,7,0), fix("Locker",-9,0,3,-90)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(-9,0,3),Rot=-90}},
 }
 
 ROOMS.StorageRoom = {
 	Name="StorageRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={fix("ShelfUnit",-7,0,-5,0), fix("ShelfUnit",-7,0,2,0), fix("ShelfUnit",7,0,-5,180),
-		fix("Crate",0,0,-4,15), fix("Crate",2,0,-2,-10), fix("Barrel",-3,0,6,0), fix("Locker",5,0,7,90)},
-	HidingSpots={{Type="Locker",Off=Vector3.new(5,0,7),Rot=90},{Type="ShelfCrawl",Off=Vector3.new(-7,0,-1),Rot=0}},
+	Furniture={fix("ShelfUnit",-9,0,-7,0), fix("ShelfUnit",-9,0,3,0), fix("ShelfUnit",9,0,-7,180),
+		fix("Crate",3,0,-7,15), fix("Crate",6,0,-5,-10), fix("Barrel",-4,0,8,0), fix("Locker",9,0,7,180)},
+	HidingSpots={{Type="Locker",Off=Vector3.new(9,0,7),Rot=180},{Type="ShelfCrawl",Off=Vector3.new(-9,0,0),Rot=0}},
 }
 
 ROOMS.Laboratory = {
 	Name="Laboratory", FloorMat="Marble", FloorCol=C.LabWhite,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
-	Furniture={fix("LabBench",-6,0,-4,0), fix("LabBench",-6,0,4,0), fix("LabBench",4,0,-4,180),
-		fix("FileCab",8,0,-7,90), fix("Chair",-4,0,-4,30), fix("Chair",6,0,-4,-30)},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-6,0,4),Rot=0}},
+	Furniture={fix("LabBench",-8,0,-6,0), fix("LabBench",-8,0,5,0), fix("LabBench",5,0,-6,180),
+		fix("FileCab",9,0,-9,0), fix("Chair",-5,0,-6,30), fix("Chair",3,0,-6,-30)},
+	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-8,0,5),Rot=0}},
 }
 
 ROOMS.Bathroom = {
 	Name="Bathroom", FloorMat="Marble", FloorCol=C.TileWhite,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0), fix("Pipe",-4,11,0)},
-	Furniture={fix("BathroomStall",-5,0,-3,0), fix("BathroomStall",-5,0,3,0), fix("BathroomStall",0,0,-3,0), fix("BathroomSink",5,0,0,90)},
-	HidingSpots={{Type="StallHide",Off=Vector3.new(-5,0,3),Rot=0},{Type="StallHide",Off=Vector3.new(0,0,-3),Rot=0}},
+	Fixtures={fix("Fluor",0,11.5,0), fix("Pipe",-5,11,0)},
+	Furniture={fix("BathroomStall",-7,0,-5,0), fix("BathroomStall",-7,0,5,0), fix("BathroomStall",0,0,-5,0), fix("BathroomSink",8,0,0,90)},
+	HidingSpots={{Type="StallHide",Off=Vector3.new(-7,0,5),Rot=0},{Type="StallHide",Off=Vector3.new(0,0,-5),Rot=0}},
 }
 
 ROOMS.ServerRoom = {
 	Name="ServerRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-6,11,0), fix("Pipe",6,11,0)},
-	Furniture={fix("ServerRack",-7,0,-6,0), fix("ServerRack",-7,0,0,0), fix("ServerRack",-7,0,6,0),
-		fix("ServerRack",7,0,-6,180), fix("ServerRack",7,0,0,180), fix("ServerRack",7,0,6,180), fix("Console",0,0,8,0)},
-	HidingSpots={{Type="RackGap",Off=Vector3.new(-7,0,3),Rot=0},{Type="RackGap",Off=Vector3.new(7,0,3),Rot=180}},
+	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-6,11,4), fix("Pipe",6,11,4)},
+	Furniture={fix("ServerRack",-9,0,-7,0), fix("ServerRack",-9,0,0,0), fix("ServerRack",-9,0,7,0),
+		fix("ServerRack",9,0,-7,180), fix("ServerRack",9,0,0,180), fix("ServerRack",9,0,7,180), fix("Console",0,0,9,0)},
+	HidingSpots={{Type="RackGap",Off=Vector3.new(-9,0,3.5),Rot=0},{Type="RackGap",Off=Vector3.new(9,0,3.5),Rot=180}},
 }
 
 ROOMS.Elevator = {
 	Name="Elevator", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete, IsSafe=true,
 	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={fix("ElevatorPanel",11.5,3,0,90)},
+	Furniture={fix("ElevatorPanel",-11.85,3,5,0)},
 	HidingSpots={},
 }
 
