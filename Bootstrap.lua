@@ -138,7 +138,7 @@ ROOMS.MaintenanceTunnel = {
 ROOMS.ObservationDeck = {
 	Name="ObservationDeck", FloorMat="Marble", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0), fix("Window",11,5,0,90)},
+	Fixtures={fix("Fluor",0,11.5,0)},
 	Furniture={fix("Console",-7,0,-5,0), fix("Console",-7,0,5,0),
 		fix("Chair",-4,0,-5,0), fix("Chair",-4,0,5,0)},
 	HidingSpots={},
@@ -405,9 +405,6 @@ local function buildRoom(template, origin, floorFolder, floorIdx)
 			local pl = Instance.new("PointLight"); pl.Brightness=0.5*lightMult; pl.Range=16; pl.Color=Color3.fromRGB(180,160,100); pl.Parent=b
 		elseif f.Type == "Pipe" then
 			mp({Name="Pipe",Size=Vector3.new(0.5,0.5,ROOM_UNIT),CFrame=CFrame.new(pos)*CFrame.Angles(0,math.rad(f.Rotation),0),Material=Enum.Material.Metal,Color=C.Rust,Parent=roomFolder})
-		elseif f.Type == "Window" then
-			local g = mp({Name="Window",Size=Vector3.new(0.2,4,6),CFrame=CFrame.new(pos)*CFrame.Angles(0,math.rad(f.Rotation),0),Material=Enum.Material.Glass,Color=Color3.fromRGB(50,55,65),Parent=roomFolder})
-			g.Transparency = 0.6
 		end
 	end
 
