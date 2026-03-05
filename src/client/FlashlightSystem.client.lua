@@ -71,9 +71,9 @@ local function setupFlashlight(char)
 	flashlightPart.CFrame = hrp.CFrame * CFrame.new(0, 0.5, -1)
 
 	spotlight = Instance.new("SpotLight")
-	spotlight.Brightness = 3
-	spotlight.Range = 60
-	spotlight.Angle = 45
+	spotlight.Brightness = 8
+	spotlight.Range = 85
+	spotlight.Angle = 60
 	spotlight.Color = Color3.fromRGB(240, 240, 255)
 	spotlight.Shadows = true
 	spotlight.Enabled = isOn

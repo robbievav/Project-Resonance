@@ -181,13 +181,44 @@ local function findStairwell()
 	return nil
 end
 
+local PathfindingService = game:GetService("PathfindingService")
+local currentPath = nil
+local waypointIndex = 1
+
 ---------------------------------------------------------------------------
--- MOVE TOWARD TARGET
+-- MOVE TOWARD TARGET (Using Pathfinding)
 ---------------------------------------------------------------------------
 local function moveToward(pos)
 	if not entity or not entity.PrimaryPart then return end
 	local humanoid = entity:FindFirstChildOfClass("Humanoid")
-	if humanoid then
+	if not humanoid then return end
+
+	local path = PathfindingService:CreatePath({
+		AgentRadius = 2,
+		AgentHeight = 5,
+		AgentCanJump = false,
+		WaypointSpacing = 4,
+	})
+
+	local success, errorMessage = pcall(function()
+		path:ComputeAsync(entity.PrimaryPart.Position, pos)
+	end)
+
+	if success and path.Status == Enum.PathStatus.Success then
+		local waypoints = path:GetWaypoints()
+		if #waypoints >= 2 then
+			-- Move to the next immediate waypoint (index 2 because 1 is our current spot)
+			local nextPoint = waypoints[2]
+			humanoid:MoveTo(nextPoint.Position)
+			if nextPoint.Action == Enum.PathWaypointAction.Jump then
+				humanoid.Jump = true
+			end
+		else
+			-- We are right next to it, just move directly
+			humanoid:MoveTo(pos)
+		end
+	else
+		-- Fallback to straight line if path fails
 		humanoid:MoveTo(pos)
 	end
 end

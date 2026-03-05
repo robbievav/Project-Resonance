@@ -124,9 +124,21 @@ RunService.RenderStepped:Connect(function(dt)
 	barY = barY + dt * 0.08
 	if barY > 1.03 then barY = -0.03 end
 	rollingBar.Position = UDim2.new(0, 0, barY, 0)
+	
+	-- Dynamic VHS noise based on Decibel distance
+	local baseNoiseAlpha = Config.Atmosphere.VHSNoiseAlpha
+	local decibel = workspace:FindFirstChild("TheDecibel")
+	if decibel and decibel.PrimaryPart and player.Character and player.Character.PrimaryPart then
+		local dist = (decibel.PrimaryPart.Position - player.Character.PrimaryPart.Position).Magnitude
+		-- if within 60 studs, quickly increase static up to 0.6 alpha
+		if dist < 60 then
+			local intensity = 1 - (dist / 60)
+			baseNoiseAlpha = baseNoiseAlpha + (intensity * 0.5)
+		end
+	end
 
-	-- VHS noise subtle flicker
-	noiseFrame.BackgroundTransparency = 1 - Config.Atmosphere.VHSNoiseAlpha - (math.random() * 0.015)
+	-- Apply subtle flicker to whatever our calculated alpha is
+	noiseFrame.BackgroundTransparency = 1 - baseNoiseAlpha - (math.random() * 0.05)
 
 	-- Flicker lights
 	local now = tick()
