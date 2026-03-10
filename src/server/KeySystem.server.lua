@@ -96,7 +96,13 @@ local function spawnKeyOnFloor(floorIndex)
 	end
 
 	local chosen = candidates[math.random(1, #candidates)]
-	local spawnPos = chosen.Position + Vector3.new(0, chosen.Size.Y / 2 + 1, 0)
+	-- Spawn near a random wall corner, not the floor center
+	local cornerOffsets = {
+		Vector3.new(10, 0, 10), Vector3.new(-10, 0, 10),
+		Vector3.new(10, 0, -10), Vector3.new(-10, 0, -10),
+	}
+	local corner = cornerOffsets[math.random(1, #cornerOffsets)]
+	local spawnPos = chosen.Position + Vector3.new(corner.X, chosen.Size.Y / 2 + 1, corner.Z)
 
 	local keyModel, keyBody, prompt = makeKey(floorFolder, spawnPos)
 	spawnedKeys[floorIndex] = keyModel

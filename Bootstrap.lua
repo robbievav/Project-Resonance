@@ -124,7 +124,10 @@ ROOMS.MedBay = {
 		fix("Desk",3.5,0,1.5,90),
 	},
 	HidingSpots={
-		{Type="UnderBed",Off=Vector3.new(-4,0,4),Rot=0},
+		-- Under bed 1 (at -7.5, 0, 10)
+		{Type="UnderBed",Off=Vector3.new(-7.5,0,10),Rot=90},
+		-- Under bed 2 (at -15.5, 0, -12.2)
+		{Type="UnderBed",Off=Vector3.new(-15.5,0,-12.2),Rot=-90},
 	},
 }
 
@@ -147,7 +150,8 @@ ROOMS.BreakRoom = {
 		fix("TrashCan",-5,0,-3,0),
 	},
 	HidingSpots={
-		{Type="UnderTable",Off=Vector3.new(0,0,0),Rot=0},
+		-- Under the break table (table is at 0,0,0 — offset slightly so key won't spawn there)
+		{Type="UnderTable",Off=Vector3.new(0,0,1.5),Rot=0},
 	},
 }
 
@@ -168,7 +172,8 @@ ROOMS.ArchiveRoom = {
 		fix("Crate",4,0,5,0),
 	},
 	HidingSpots={
-		{Type="CabinetRow",Off=Vector3.new(0,0,-4),Rot=0},
+		-- Between the two left filing cabinet pairs (at Z=-5)
+		{Type="CabinetRow",Off=Vector3.new(-3.5,0,-5),Rot=0},
 	},
 }
 
@@ -216,7 +221,8 @@ ROOMS.MechanicalRoom = {
 		fix("ToolBox",3,0,5,0),
 	},
 	HidingSpots={
-		{Type="BehindGenerator",Off=Vector3.new(-4,0,-4),Rot=0},
+		-- Behind the generator (generator is at -4, 0, -4)
+		{Type="BehindGenerator",Off=Vector3.new(-4,0,-2),Rot=0},
 	},
 }
 
@@ -235,7 +241,10 @@ ROOMS.Dormitory = {
 		fix("Footlocker",-2,0,-4,0), fix("Footlocker",-2,0,4,0),
 	},
 	HidingSpots={
-		{Type="UnderBed",Off=Vector3.new(-4,0,4),Rot=0},
+		-- Under cot 2 (at -6.5, 0, 6.5)
+		{Type="UnderBed",Off=Vector3.new(-6.5,0,6.5),Rot=90},
+		-- Under cot 3 (at -14.4, 0, -7.6)
+		{Type="UnderBed",Off=Vector3.new(-14.4,0,-7.6),Rot=-90},
 	},
 }
 
