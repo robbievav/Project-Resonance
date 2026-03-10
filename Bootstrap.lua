@@ -117,15 +117,13 @@ ROOMS.MedBay = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
 	Furniture={
-		fix("HospitalBed",-8,0,-6,0), fix("HospitalBed",-8,0,5,0),
-		fix("CurtainDivider",-5,0,0,0),
-		fix("MedCabinet",9,0,-6,180),
-		fix("BathroomSink",9,0,4,180),
-		fix("Desk",5,0,8,90),
+		fix("HospitalBed",-6,0,-6,0), fix("HospitalBed",-6,0,5,0),
+		fix("MedCabinet",6,0,-6,180),
+		fix("BathroomSink",6,0,5,180),
+		fix("Desk",5,0,7,90),
 	},
 	HidingSpots={
-		{Type="BehindCurtain",Off=Vector3.new(-6,0,-3),Rot=0},
-		{Type="UnderBed",Off=Vector3.new(-9,0,7),Rot=0},
+		{Type="UnderBed",Off=Vector3.new(-6,0,5),Rot=0},
 	},
 }
 
@@ -137,12 +135,12 @@ ROOMS.BreakRoom = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0), fix("Fluor",0,11.5,-7)},
 	Furniture={
-		fix("VendingMachine",-9,0,-7,0),
-		fix("Counter",-9,0,4,0),
+		fix("VendingMachine",-6,0,-6,0),
+		fix("Counter",-6,0,5,0),
 		fix("BreakTable",0,0,0,0),
-		fix("Chair",-2,0,2,30), fix("Chair",2,0,-2,-30),
-		fix("Couch",8,0,0,180),
-		fix("TrashCan",5,0,-8,0),
+		fix("Chair",-2,0,2,30),
+		fix("Couch",6,0,5,180),
+		fix("TrashCan",6,0,-6,0),
 	},
 	HidingSpots={
 		{Type="UnderTable",Off=Vector3.new(0,0,0),Rot=0},
@@ -157,15 +155,13 @@ ROOMS.ArchiveRoom = {
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",-5,11,0), fix("DimBulb",5,11,0)},
 	Furniture={
-		fix("FileCab",-7,0,-7,0), fix("FileCab",-7,0,2,0),
-		fix("FileCab",0,0,-7,0), fix("FileCab",0,0,2,0),
-		fix("FileCab",7,0,-7,180), fix("FileCab",7,0,2,180),
-		fix("Desk",-4,0,8,0),
-		fix("Crate",8,0,8,15),
+		fix("FileCab",-6,0,-6,0), fix("FileCab",-6,0,5,0),
+		fix("FileCab",6,0,-6,180), fix("FileCab",6,0,5,180),
+		fix("Desk",-5,0,7,0),
+		fix("Crate",5,0,7,15),
 	},
 	HidingSpots={
 		{Type="CabinetRow",Off=Vector3.new(-4,0,0),Rot=0},
-		{Type="CabinetRow",Off=Vector3.new(4,0,0),Rot=0},
 	},
 }
 
@@ -177,14 +173,13 @@ ROOMS.SecurityStation = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
 	Furniture={
-		fix("Console",-5,0,-8,0), fix("Console",5,0,-8,0),
-		fix("Chair",-5,0,-6,0), fix("Chair",5,0,-6,0),
-		fix("Locker",9,0,-4,180), fix("Locker",9,0,4,180),
-		fix("ShelfUnit",-9,0,0,0),
-		fix("Desk",0,0,7,0),
+		fix("Console",-5,0,-6,0), fix("Console",5,0,-6,0),
+		fix("Chair",-5,0,-4,0), fix("Chair",5,0,-4,0),
+		fix("Locker",6,0,5,180),
+		fix("ShelfUnit",-6,0,5,0),
 	},
 	HidingSpots={
-		{Type="Locker",Off=Vector3.new(9,0,4),Rot=180},
+		{Type="Locker",Off=Vector3.new(6,0,5),Rot=180},
 	},
 }
 
@@ -196,14 +191,14 @@ ROOMS.MechanicalRoom = {
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-5), fix("Pipe",0,11,5)},
 	Furniture={
-		fix("Generator",-6,0,0,0),
-		fix("Barrel",8,0,-7,0), fix("Barrel",6,0,-7,0),
-		fix("ShelfUnit",9,0,5,180),
-		fix("Crate",-4,0,-8,20),
-		fix("ToolBox",5,0,8,0),
+		fix("Generator",-5,0,5,0),
+		fix("Barrel",6,0,-6,0), fix("Barrel",5,0,-5,0),
+		fix("ShelfUnit",6,0,5,180),
+		fix("Crate",-5,0,-6,20),
+		fix("ToolBox",5,0,7,0),
 	},
 	HidingSpots={
-		{Type="BehindGenerator",Off=Vector3.new(-7,0,3),Rot=0},
+		{Type="BehindGenerator",Off=Vector3.new(-5,0,5),Rot=0},
 	},
 }
 
@@ -215,14 +210,13 @@ ROOMS.Dormitory = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("DimBulb",-4,11,-4), fix("DimBulb",4,11,4)},
 	Furniture={
-		fix("Cot",-8,0,-6,0), fix("Cot",-8,0,3,0),
-		fix("Cot",8,0,-6,180), fix("Cot",8,0,3,180),
-		fix("Footlocker",-5,0,-6,0), fix("Footlocker",-5,0,3,0),
-		fix("Desk",5,0,8,90),
+		fix("Cot",-6,0,-6,0), fix("Cot",-6,0,5,0),
+		fix("Cot",6,0,-6,180), fix("Cot",6,0,5,180),
+		fix("Footlocker",-4,0,-6,0), fix("Footlocker",-4,0,5,0),
+		fix("Desk",5,0,7,90),
 	},
 	HidingSpots={
-		{Type="UnderBed",Off=Vector3.new(-9,0,-3),Rot=0},
-		{Type="UnderBed",Off=Vector3.new(9,0,2),Rot=180},
+		{Type="UnderBed",Off=Vector3.new(-6,0,5),Rot=0},
 	},
 }
 
@@ -266,7 +260,6 @@ local FURNITURE_MAP = {
 	BathroomSink   = { Model = "bathroom sink",     Scale = 1.0,  RotFix = 0   },
 	-- MedBay furniture
 	HospitalBed    = { Model = "couch",             Scale = 1.1,  RotFix = 0   },
-	CurtainDivider = { Model = "shelf1",            Scale = 0.6,  RotFix = 0   },
 	MedCabinet     = { Model = "cabinet 1",         Scale = 0.9,  RotFix = 0   },
 	-- BreakRoom furniture
 	VendingMachine = { Model = "Refridgerator",     Scale = 1.0,  RotFix = 0   },
