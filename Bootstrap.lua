@@ -180,13 +180,14 @@ ROOMS.SecurityStation = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
 	Furniture={
-		-- Pair of monitor consoles side by side, facing the room
-		fix("Console",-3,0,-5,0), fix("Console",3,0,-5,0),
-		fix("Chair",-3,0,-3,0), fix("Chair",3,0,-3,0),
+		-- Monitor consoles facing the room
+		fix("Console",-9.5,0,-4.25,180), fix("Console",12,0,-5,0),
+		-- Chairs at each console
+		fix("Chair",-5.1,0,-1.1,90), fix("Chair",9.4,0,-8.4,-90),
+		-- Shelf on the left side
+		fix("ShelfUnit",-17.6,0,16.7,90),
 		-- Locker in front-right corner
 		fix("Locker",5,0,5,180),
-		-- Shelf in front-left corner
-		fix("ShelfUnit",-5,0,5,0),
 	},
 	HidingSpots={
 		{Type="Locker",Off=Vector3.new(5,0,5),Rot=180},
