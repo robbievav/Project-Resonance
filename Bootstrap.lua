@@ -117,15 +117,11 @@ ROOMS.MedBay = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
 	Furniture={
-		-- Hospital beds along left wall
-		fix("HospitalBed",-9,0,-7,0), fix("HospitalBed",-9,0,0,0), fix("HospitalBed",-9,0,7,0),
-		-- Curtain dividers between beds
-		fix("CurtainDivider",-6,0,-3,0), fix("CurtainDivider",-6,0,4,0),
-		-- Medicine cabinet and sink on right wall
-		fix("MedCabinet",10,0,-8,180), fix("MedCabinet",10,0,-2,180),
-		fix("BathroomSink",10,0,5,180),
-		-- Small desk with chair for doctor
-		fix("Desk",5,0,8,90), fix("Chair",3,0,8,90),
+		fix("HospitalBed",-8,0,-6,0), fix("HospitalBed",-8,0,5,0),
+		fix("CurtainDivider",-5,0,0,0),
+		fix("MedCabinet",9,0,-6,180),
+		fix("BathroomSink",9,0,4,180),
+		fix("Desk",5,0,8,90),
 	},
 	HidingSpots={
 		{Type="BehindCurtain",Off=Vector3.new(-6,0,-3),Rot=0},
@@ -141,18 +137,12 @@ ROOMS.BreakRoom = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0), fix("Fluor",0,11.5,-7)},
 	Furniture={
-		-- Vending machines against back wall
-		fix("VendingMachine",-9,0,-9,0), fix("VendingMachine",-9,0,-4,0),
-		-- Counter with microwave along left wall
-		fix("Counter",-9,0,4,0), fix("MicrowaveUnit",-9,3,4,0),
-		-- Central table with chairs
+		fix("VendingMachine",-9,0,-7,0),
+		fix("Counter",-9,0,4,0),
 		fix("BreakTable",0,0,0,0),
-		fix("Chair",-2,0,2,30), fix("Chair",2,0,2,-30),
-		fix("Chair",-2,0,-2,150), fix("Chair",2,0,-2,-150),
-		-- Couch along right wall
-		fix("Couch",9,0,0,180), fix("Couch",9,0,6,180),
-		-- Trash can
-		fix("TrashCan",5,0,-9,0),
+		fix("Chair",-2,0,2,30), fix("Chair",2,0,-2,-30),
+		fix("Couch",8,0,0,180),
+		fix("TrashCan",5,0,-8,0),
 	},
 	HidingSpots={
 		{Type="UnderTable",Off=Vector3.new(0,0,0),Rot=0},
@@ -167,14 +157,11 @@ ROOMS.ArchiveRoom = {
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",-5,11,0), fix("DimBulb",5,11,0)},
 	Furniture={
-		-- Filing cabinet rows (3 rows running north–south)
-		fix("FileCab",-8,0,-8,0), fix("FileCab",-8,0,-3,0), fix("FileCab",-8,0,2,0), fix("FileCab",-8,0,7,0),
-		fix("FileCab",0,0,-8,0), fix("FileCab",0,0,-3,0), fix("FileCab",0,0,2,0), fix("FileCab",0,0,7,0),
-		fix("FileCab",8,0,-8,180), fix("FileCab",8,0,-3,180), fix("FileCab",8,0,2,180), fix("FileCab",8,0,7,180),
-		-- Reading desk in corner
-		fix("Desk",-4,0,9,0), fix("Chair",-2,0,9,0),
-		-- Box stacks
-		fix("Crate",9,0,9,15), fix("Crate",7,0,9,-10),
+		fix("FileCab",-7,0,-7,0), fix("FileCab",-7,0,2,0),
+		fix("FileCab",0,0,-7,0), fix("FileCab",0,0,2,0),
+		fix("FileCab",7,0,-7,180), fix("FileCab",7,0,2,180),
+		fix("Desk",-4,0,8,0),
+		fix("Crate",8,0,8,15),
 	},
 	HidingSpots={
 		{Type="CabinetRow",Off=Vector3.new(-4,0,0),Rot=0},
@@ -190,18 +177,14 @@ ROOMS.SecurityStation = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0)},
 	Furniture={
-		-- Monitor desk (U-shaped setup at back)
-		fix("Console",-6,0,-9,0), fix("Console",0,0,-9,0), fix("Console",6,0,-9,0),
-		fix("Chair",-6,0,-7,0), fix("Chair",0,0,-7,0), fix("Chair",6,0,-7,0),
-		-- Locker row along right wall
-		fix("Locker",10,0,-6,180), fix("Locker",10,0,-1,180), fix("Locker",10,0,4,180),
-		-- Weapon rack (shelf) on left wall
-		fix("ShelfUnit",-10,0,-4,0), fix("ShelfUnit",-10,0,4,0),
-		-- Small table with radio equipment
-		fix("Desk",0,0,8,0), fix("ToolBox",2,0,8,0),
+		fix("Console",-5,0,-8,0), fix("Console",5,0,-8,0),
+		fix("Chair",-5,0,-6,0), fix("Chair",5,0,-6,0),
+		fix("Locker",9,0,-4,180), fix("Locker",9,0,4,180),
+		fix("ShelfUnit",-9,0,0,0),
+		fix("Desk",0,0,7,0),
 	},
 	HidingSpots={
-		{Type="Locker",Off=Vector3.new(10,0,4),Rot=180},
+		{Type="Locker",Off=Vector3.new(9,0,4),Rot=180},
 	},
 }
 
@@ -213,17 +196,11 @@ ROOMS.MechanicalRoom = {
 	CeilCol=C.DarkConcrete,
 	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-5), fix("Pipe",0,11,5)},
 	Furniture={
-		-- Large generator unit (center-left)
-		fix("Generator",-7,0,0,0),
-		-- Barrels along back wall
-		fix("Barrel",9,0,-8,0), fix("Barrel",9,0,-4,0), fix("Barrel",7,0,-8,0),
-		-- Tool shelf on right wall
-		fix("ShelfUnit",10,0,2,180), fix("ShelfUnit",10,0,8,180),
-		-- Crates and toolbox
-		fix("Crate",-3,0,-9,20), fix("Crate",-6,0,-9,-15),
-		fix("ToolBox",5,0,9,0),
-		-- Valve wheel (small barrel)
-		fix("Barrel",-9,0,8,0),
+		fix("Generator",-6,0,0,0),
+		fix("Barrel",8,0,-7,0), fix("Barrel",6,0,-7,0),
+		fix("ShelfUnit",9,0,5,180),
+		fix("Crate",-4,0,-8,20),
+		fix("ToolBox",5,0,8,0),
 	},
 	HidingSpots={
 		{Type="BehindGenerator",Off=Vector3.new(-7,0,3),Rot=0},
@@ -238,17 +215,10 @@ ROOMS.Dormitory = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("DimBulb",-4,11,-4), fix("DimBulb",4,11,4)},
 	Furniture={
-		-- Bunk beds (cots) along left wall
-		fix("Cot",-9,0,-8,0), fix("Cot",-9,0,-3,0), fix("Cot",-9,0,2,0), fix("Cot",-9,0,7,0),
-		-- Bunk beds along right wall
-		fix("Cot",9,0,-8,180), fix("Cot",9,0,-3,180), fix("Cot",9,0,2,180),
-		-- Footlockers at end of each bed
-		fix("Footlocker",-6,0,-8,0), fix("Footlocker",-6,0,-3,0), fix("Footlocker",-6,0,2,0),
-		fix("Footlocker",6,0,-8,180), fix("Footlocker",6,0,-3,180),
-		-- Desk and chair in back corner
-		fix("Desk",5,0,8,90), fix("Chair",3,0,8,90),
-		-- Small shelf
-		fix("ShelfUnit",9,0,8,180),
+		fix("Cot",-8,0,-6,0), fix("Cot",-8,0,3,0),
+		fix("Cot",8,0,-6,180), fix("Cot",8,0,3,180),
+		fix("Footlocker",-5,0,-6,0), fix("Footlocker",-5,0,3,0),
+		fix("Desk",5,0,8,90),
 	},
 	HidingSpots={
 		{Type="UnderBed",Off=Vector3.new(-9,0,-3),Rot=0},
@@ -301,7 +271,6 @@ local FURNITURE_MAP = {
 	-- BreakRoom furniture
 	VendingMachine = { Model = "Refridgerator",     Scale = 1.0,  RotFix = 0   },
 	Counter        = { Model = "dinner table",      Scale = 0.8,  RotFix = 0   },
-	MicrowaveUnit  = { Model = "small safe",        Scale = 0.4,  RotFix = 0   },
 	BreakTable     = { Model = "dinner table",      Scale = 1.0,  RotFix = 0   },
 	Couch          = { Model = "couch",             Scale = 1.0,  RotFix = 0   },
 	TrashCan       = { Model = "cabinet 3",         Scale = 0.4,  RotFix = 0   },
