@@ -206,9 +206,13 @@ ROOMS.MechanicalRoom = {
 		fix("Generator",-4,0,-4,0),
 		-- Barrels grouped in back-right corner
 		fix("Barrel",5,0,-5,0), fix("Barrel",4,0,-4,0),
-		-- Tool shelf in front-right corner
-		fix("ShelfUnit",5,0,5,180),
-		-- Toolbox beside the shelf
+		-- Row of shelves along back wall
+		fix("ShelfUnit",-17.3,0,-16.7,0), fix("ShelfUnit",-10.3,0,-16.7,0),
+		fix("ShelfUnit",3.6,0,-16.7,0), fix("ShelfUnit",10.7,0,-16.7,0),
+		-- Row of shelves along front wall
+		fix("ShelfUnit",17.3,0,16.3,180), fix("ShelfUnit",10.3,0,16.3,180),
+		fix("ShelfUnit",-3.6,0,16.3,180), fix("ShelfUnit",-10.7,0,16.1,180),
+		-- Toolbox
 		fix("ToolBox",3,0,5,0),
 	},
 	HidingSpots={
