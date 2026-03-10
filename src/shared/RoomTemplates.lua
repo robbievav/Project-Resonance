@@ -1,7 +1,7 @@
 --[[
 	RoomTemplates.lua — Room blueprints for the procedural generator.
 	6 Unique Rooms + Elevator/Stairwell (special-purpose)
-	All furniture placed at max ±7 offset, corners only, clear of door paths.
+	Furniture at max ±4-5 offset, arranged with purpose, clear of all door paths.
 ]]
 
 local Config = require(script.Parent.Config)
@@ -25,11 +25,11 @@ RoomTemplates.MedBay = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("FluorescentLight", -4, 11.5, 0), fixture("FluorescentLight", 4, 11.5, 0) },
 	Furniture = {
-		fixture("HospitalBed", -6, 0, -6, 0), fixture("HospitalBed", -6, 0, 5, 0),
-		fixture("MedCabinet", 6, 0, -6, 180), fixture("BathroomSink", 6, 0, 5, 180),
-		fixture("Desk", 5, 0, 7, 90),
+		fixture("HospitalBed", -4, 0, -4, 90), fixture("HospitalBed", -4, 0, 4, 90),
+		fixture("MedCabinet", 5, 0, -5, 0),
+		fixture("Desk", 5, 0, 5, 0),
 	},
-	HidingSpots = { { Type = "UnderBed", Offset = Vector3.new(-6, 0, 5), Rotation = 0 } },
+	HidingSpots = { { Type = "UnderBed", Offset = Vector3.new(-4, 0, 4), Rotation = 0 } },
 }
 
 RoomTemplates.BreakRoom = {
@@ -41,9 +41,11 @@ RoomTemplates.BreakRoom = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("FluorescentLight", 0, 11.5, 0), fixture("FluorescentLight", 0, 11.5, -7) },
 	Furniture = {
-		fixture("VendingMachine", -6, 0, -6, 0), fixture("Counter", -6, 0, 5, 0),
-		fixture("BreakTable", 0, 0, 0, 0), fixture("Chair", -2, 0, 2, 30),
-		fixture("Couch", 6, 0, 5, 180), fixture("TrashCan", 6, 0, -6, 0),
+		fixture("VendingMachine", -5, 0, -5, 0),
+		fixture("BreakTable", 0, 0, 0, 0),
+		fixture("Chair", -2, 0, 1, 0),
+		fixture("Couch", 4, 0, 4, 180),
+		fixture("TrashCan", -5, 0, -3, 0),
 	},
 	HidingSpots = { { Type = "UnderTable", Offset = Vector3.new(0, 0, 0), Rotation = 0 } },
 }
@@ -57,11 +59,12 @@ RoomTemplates.ArchiveRoom = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("DimBulb", -5, 11, 0), fixture("DimBulb", 5, 11, 0) },
 	Furniture = {
-		fixture("FilingCabinet", -6, 0, -6, 0), fixture("FilingCabinet", -6, 0, 5, 0),
-		fixture("FilingCabinet", 6, 0, -6, 180), fixture("FilingCabinet", 6, 0, 5, 180),
-		fixture("Desk", -5, 0, 7, 0), fixture("Crate", 5, 0, 7, 15),
+		fixture("FilingCabinet", -5, 0, -5, 0), fixture("FilingCabinet", -2, 0, -5, 0),
+		fixture("FilingCabinet", 2, 0, -5, 0), fixture("FilingCabinet", 5, 0, -5, 0),
+		fixture("Desk", -4, 0, 5, 0),
+		fixture("Crate", 4, 0, 5, 0),
 	},
-	HidingSpots = { { Type = "CabinetRow", Offset = Vector3.new(-4, 0, 0), Rotation = 0 } },
+	HidingSpots = { { Type = "CabinetRow", Offset = Vector3.new(0, 0, -4), Rotation = 0 } },
 }
 
 RoomTemplates.SecurityStation = {
@@ -73,11 +76,12 @@ RoomTemplates.SecurityStation = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("FluorescentLight", 0, 11.5, 0) },
 	Furniture = {
-		fixture("Console", -5, 0, -6, 0), fixture("Console", 5, 0, -6, 0),
-		fixture("Chair", -5, 0, -4, 0), fixture("Chair", 5, 0, -4, 0),
-		fixture("Locker", 6, 0, 5, 180), fixture("ShelfUnit", -6, 0, 5, 0),
+		fixture("Console", -3, 0, -5, 0), fixture("Console", 3, 0, -5, 0),
+		fixture("Chair", -3, 0, -3, 0), fixture("Chair", 3, 0, -3, 0),
+		fixture("Locker", 5, 0, 5, 180),
+		fixture("ShelfUnit", -5, 0, 5, 0),
 	},
-	HidingSpots = { { Type = "Locker", Offset = Vector3.new(6, 0, 5), Rotation = 180 } },
+	HidingSpots = { { Type = "Locker", Offset = Vector3.new(5, 0, 5), Rotation = 180 } },
 }
 
 RoomTemplates.MechanicalRoom = {
@@ -92,12 +96,12 @@ RoomTemplates.MechanicalRoom = {
 		fixture("Pipe", 4, 11, 0), fixture("Pipe", 0, 11, -5), fixture("Pipe", 0, 11, 5),
 	},
 	Furniture = {
-		fixture("Generator", -5, 0, 5, 0),
-		fixture("Barrel", 6, 0, -6, 0), fixture("Barrel", 5, 0, -5, 0),
-		fixture("ShelfUnit", 6, 0, 5, 180),
-		fixture("Crate", -5, 0, -6, 20), fixture("ToolBox", 5, 0, 7, 0),
+		fixture("Generator", -4, 0, -4, 0),
+		fixture("Barrel", 5, 0, -5, 0), fixture("Barrel", 4, 0, -4, 0),
+		fixture("ShelfUnit", 5, 0, 5, 180),
+		fixture("ToolBox", 3, 0, 5, 0),
 	},
-	HidingSpots = { { Type = "BehindGenerator", Offset = Vector3.new(-5, 0, 5), Rotation = 0 } },
+	HidingSpots = { { Type = "BehindGenerator", Offset = Vector3.new(-4, 0, -4), Rotation = 0 } },
 }
 
 RoomTemplates.Dormitory = {
@@ -109,12 +113,11 @@ RoomTemplates.Dormitory = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("DimBulb", -4, 11, -4), fixture("DimBulb", 4, 11, 4) },
 	Furniture = {
-		fixture("Cot", -6, 0, -6, 0), fixture("Cot", -6, 0, 5, 0),
-		fixture("Cot", 6, 0, -6, 180), fixture("Cot", 6, 0, 5, 180),
-		fixture("Footlocker", -4, 0, -6, 0), fixture("Footlocker", -4, 0, 5, 0),
-		fixture("Desk", 5, 0, 7, 90),
+		fixture("Cot", -4, 0, -4, 90), fixture("Cot", -4, 0, 4, 90),
+		fixture("Cot", 4, 0, -4, -90), fixture("Cot", 4, 0, 4, -90),
+		fixture("Footlocker", -2, 0, -4, 0), fixture("Footlocker", -2, 0, 4, 0),
 	},
-	HidingSpots = { { Type = "UnderBed", Offset = Vector3.new(-6, 0, 5), Rotation = 0 } },
+	HidingSpots = { { Type = "UnderBed", Offset = Vector3.new(-4, 0, 4), Rotation = 0 } },
 }
 
 RoomTemplates.Elevator = {
