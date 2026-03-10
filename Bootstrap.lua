@@ -117,11 +117,11 @@ ROOMS.MedBay = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
 	Furniture={
-		-- Two beds in a row along the left wall, facing right
-		fix("HospitalBed",-4,0,-4,90), fix("HospitalBed",-4,0,4,90),
+		-- Hospital beds spaced apart, facing inward
+		fix("HospitalBed",-7.5,0,10,90), fix("HospitalBed",-15.5,0,-12.2,-90),
 		-- Medical supplies grouped on the right side
 		fix("MedCabinet",5,0,-5,0),
-		fix("Desk",5,0,5,0),
+		fix("Desk",3.5,0,1.5,90),
 	},
 	HidingSpots={
 		{Type="UnderBed",Off=Vector3.new(-4,0,4),Rot=0},
