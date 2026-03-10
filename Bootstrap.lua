@@ -14,8 +14,8 @@
 local SEED            = 0          -- 0 = random seed each launch
 local FLOORS          = 3         -- floors to bake (increase as needed)
 local GRID_SIZE       = 5
-local ROOM_UNIT       = 24        -- every room is exactly 24x24 studs
-local GRID_SPACING    = 32        -- center-to-center distance between rooms
+local ROOM_UNIT       = 36        -- every room is exactly 36x36 studs
+local GRID_SPACING    = 44        -- center-to-center distance between rooms
 local HALLWAY_WIDTH   = 8
 local WALL_HEIGHT     = 12
 local WALL_THICKNESS  = 1

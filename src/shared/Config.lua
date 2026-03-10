@@ -12,7 +12,7 @@ Config.Map = {
 	Seed             = 0,          -- 0 = random seed each round
 	FloorsToGenerate = 50,         -- full facility depth
 	RoomGridSize     = 5,          -- NxN grid of rooms per floor
-	RoomUnit         = 24,         -- studs per room tile
+	RoomUnit         = 36,         -- studs per room tile
 	HallwayWidth     = 8,          -- studs
 	WallHeight       = 12,         -- studs
 	WallThickness    = 1,          -- studs
