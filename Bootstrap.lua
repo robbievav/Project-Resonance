@@ -25,8 +25,8 @@ local FLOOR_SEP       = 50
 local STAIRWELL_ROW   = 2
 local STAIRWELL_COL   = 4
 local FLICKER_CHANCE  = 0.25
-local FLUOR_BRIGHTNESS = 1.2
-local FLUOR_RANGE     = 30
+local FLUOR_BRIGHTNESS = 1.5
+local FLUOR_RANGE     = 50
 
 -- Colors
 local C = {
@@ -115,7 +115,7 @@ local ROOMS = {}
 ROOMS.MedBay = {
 	Name="MedBay", FloorMat="Marble", FloorCol=C.TileWhite,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
+	Fixtures={fix("Fluor",-8,11.5,0), fix("Fluor",8,11.5,0)},
 	Furniture={
 		-- Hospital beds spaced apart, facing inward
 		fix("HospitalBed",-7.5,0,10,90), fix("HospitalBed",-15.5,0,-12.2,-90),
@@ -134,7 +134,7 @@ ROOMS.MedBay = {
 ROOMS.BreakRoom = {
 	Name="BreakRoom", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0), fix("Fluor",0,11.5,-7)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
 		-- Fridge in back-left area
 		fix("VendingMachine",-11.25,0,-16,0),
@@ -157,7 +157,7 @@ ROOMS.BreakRoom = {
 ROOMS.ArchiveRoom = {
 	Name="ArchiveRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",-5,11,0), fix("DimBulb",5,11,0)},
+	Fixtures={fix("DimBulb",-8,11,0), fix("DimBulb",8,11,0), fix("DimBulb",0,11,-8)},
 	Furniture={
 		-- Row of filing cabinets along back wall
 		fix("FileCab",-5,0,-5,0), fix("FileCab",-2,0,-5,0),
@@ -178,7 +178,7 @@ ROOMS.ArchiveRoom = {
 ROOMS.SecurityStation = {
 	Name="SecurityStation", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
 		-- Monitor consoles facing the room
 		fix("Console",-9.5,0,-4.25,180), fix("Console",12,0,-5,0),
@@ -200,7 +200,7 @@ ROOMS.SecurityStation = {
 ROOMS.MechanicalRoom = {
 	Name="MechanicalRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-5), fix("Pipe",0,11,5)},
+	Fixtures={fix("DimBulb",0,11,0), fix("DimBulb",-8,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-8), fix("Pipe",0,11,8)},
 	Furniture={
 		-- Generator in the back-left corner
 		fix("Generator",-4,0,-4,0),
@@ -222,7 +222,7 @@ ROOMS.MechanicalRoom = {
 ROOMS.Dormitory = {
 	Name="Dormitory", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("DimBulb",-4,11,-4), fix("DimBulb",4,11,4)},
+	Fixtures={fix("DimBulb",-8,11,-8), fix("DimBulb",8,11,8)},
 	Furniture={
 		-- Cots spaced around the room
 		fix("Cot",13.9,0,6,90), fix("Cot",-6.5,0,6.5,90),
@@ -472,7 +472,7 @@ local function buildRoom(template, origin, floorFolder, floorIdx, connections)
 			if math.random() < FLICKER_CHANCE then local ft=Instance.new("BoolValue"); ft.Name="Flicker"; ft.Value=true; ft.Parent=h end
 		elseif f.Type == "DimBulb" then
 			local b = mp({Name="DimBulb",Size=Vector3.new(0.6,0.6,0.6),CFrame=CFrame.new(pos),Material=Enum.Material.Neon,Color=Color3.fromRGB(180,160,100),Parent=roomFolder})
-			local pl = Instance.new("PointLight"); pl.Brightness=0.5*lightMult; pl.Range=16; pl.Color=Color3.fromRGB(180,160,100); pl.Parent=b
+			local pl = Instance.new("PointLight"); pl.Brightness=0.6*lightMult; pl.Range=28; pl.Color=Color3.fromRGB(180,160,100); pl.Parent=b
 		elseif f.Type == "Pipe" then
 			mp({Name="Pipe",Size=Vector3.new(0.5,0.5,ROOM_UNIT),CFrame=CFrame.new(pos)*CFrame.Angles(0,math.rad(f.Rotation),0),Material=Enum.Material.Metal,Color=C.Rust,Parent=roomFolder})
 		end
