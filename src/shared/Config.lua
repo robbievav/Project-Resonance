@@ -28,15 +28,12 @@ Config.Map = {
 -- ROOM TYPES & WEIGHTS  (higher weight = more common)
 ---------------------------------------------------------------------------
 Config.RoomWeights = {
-	Hallway           = 25,
-	Office            = 20,
-	MaintenanceTunnel = 12,
-	ObservationDeck   = 8,
-	SafeHub           = 4,
-	StorageRoom       = 12,
-	Laboratory        = 10,
-	Bathroom          = 8,
-	ServerRoom        = 6,
+	MedBay            = 15,
+	BreakRoom         = 15,
+	ArchiveRoom       = 15,
+	SecurityStation   = 12,
+	MechanicalRoom    = 15,
+	Dormitory         = 15,
 	Elevator          = 0,   -- placed explicitly, not randomly
 	Stairwell         = 0,   -- placed explicitly
 }

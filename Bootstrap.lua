@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------
 -- CONFIG
 -----------------------------------------------------------------------
-local SEED            = 42
+local SEED            = 0          -- 0 = random seed each launch
 local FLOORS          = 3         -- floors to bake (increase as needed)
 local GRID_SIZE       = 5
 local ROOM_UNIT       = 24        -- every room is exactly 24x24 studs
@@ -60,10 +60,10 @@ local function getTheme(f)
 	return THEMES[1]
 end
 
--- Room Weights (for random selection)
+-- Room Weights (for random selection) — only the 6 unique rooms
 local ROOM_WEIGHTS = {
-	Hallway=25, Office=20, MaintenanceTunnel=12, ObservationDeck=8, SafeHub=4,
-	StorageRoom=12, Laboratory=10, Bathroom=8, ServerRoom=6,
+	MedBay=15, BreakRoom=15, ArchiveRoom=15, SecurityStation=12,
+	MechanicalRoom=15, Dormitory=15,
 }
 
 -----------------------------------------------------------------------
@@ -109,110 +109,156 @@ local ALL_DOORS = {"NegZ","PosZ","NegX","PosX"}
 
 local ROOMS = {}
 
-ROOMS.Hallway = {
-	Name="Hallway", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
-	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,-6), fix("Fluor",0,11.5,6)},
-	Furniture={}, HidingSpots={},
-}
-
-ROOMS.Office = {
-	Name="Office", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
-	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0)},
-	Furniture={
-		fix("Desk",-8,0,-6,0), fix("Desk",8,0,-6,180), fix("Desk",-8,0,6,0), fix("Desk",8,0,6,180),
-		fix("FileCab",10,0,-10,0), fix("FileCab",10,0,10,0), fix("FileCab",-10,0,-10,0),
-		fix("Chair",-8,0,-4,0), fix("Chair",8,0,-4,0), fix("Chair",-8,0,4,0), fix("Chair",8,0,4,0),
-		fix("WaterCooler",10,0,0,0), fix("ShelfUnit",0,0,-10,0)
-	},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-8,0,-6),Rot=0},{Type="UnderDesk",Off=Vector3.new(8,0,-6),Rot=180}},
-}
-
-ROOMS.MaintenanceTunnel = {
-	Name="MaintenanceTunnel", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
-	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,-5), fix("DimBulb",0,11,5), fix("Pipe",-3,11,0), fix("Pipe",3,11,0)},
-	Furniture={
-		fix("Barrel",8,0,-8), fix("Barrel",8,0,-5), fix("Barrel",6,0,-8),
-		fix("ToolBox",-8,0,8), fix("Crate",-8,0,-8), fix("Crate",-5,0,-8)
-	},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-9,0,0),Rot=0}},
-}
-
-ROOMS.ObservationDeck = {
-	Name="ObservationDeck", FloorMat="Marble", FloorCol=C.FloorTile,
-	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0)},
-	Furniture={
-		fix("Console",-9,0,-7,0), fix("Console",-9,0,7,0), fix("Console",9,0,-7,180), fix("Console",9,0,7,180),
-		fix("Chair",-6,0,-7,0), fix("Chair",-6,0,7,0), fix("Chair",6,0,-7,180), fix("Chair",6,0,7,180),
-		fix("WaterCooler",0,0,-10,0)
-	},
-	HidingSpots={},
-}
-
-ROOMS.SafeHub = {
-	Name="SafeHub", FloorMat="Marble", FloorCol=C.FloorTile,
-	CeilCol=C.CeilingPanel, IsSafe=true,
-	Fixtures={fix("Fluor",-4,11.5,-4), fix("Fluor",4,11.5,4)},
-	Furniture={
-		fix("Desk",-8,0,-8,0), fix("Cot",8,0,7,0), fix("Cot",8,0,3,0), fix("Cot",8,0,-2,0),
-		fix("MedKit",-8,3,8,0), fix("Locker",-10,0,4,-90), fix("Locker",-10,0,0,-90),
-		fix("Chair",-6,0,-8,30), fix("Barrel",10,0,-8)
-	},
-	HidingSpots={{Type="Locker",Off=Vector3.new(-10,0,4),Rot=-90}},
-}
-
-ROOMS.StorageRoom = {
-	Name="StorageRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
-	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={
-		fix("ShelfUnit",-10,0,-8,0), fix("ShelfUnit",-10,0,4,0), fix("ShelfUnit",10,0,-8,180), fix("ShelfUnit",10,0,4,180),
-		fix("Crate",4,0,-8,15), fix("Crate",7,0,-6,-10), fix("Crate",-4,0,-2,45), fix("Crate",2,0,2,-15),
-		fix("Barrel",-5,0,9,0), fix("Barrel",0,0,9,0), fix("Barrel",5,0,9,0),
-		fix("Locker",10,0,8,180), fix("Locker",-10,0,8,0)
-	},
-	HidingSpots={{Type="Locker",Off=Vector3.new(10,0,8),Rot=180},{Type="ShelfCrawl",Off=Vector3.new(-10,0,-2),Rot=0}},
-}
-
-ROOMS.Laboratory = {
-	Name="Laboratory", FloorMat="Marble", FloorCol=C.LabWhite,
+-----------------------------------------------------------------------
+-- ROOM 1: MedBay — Medical facility with hospital beds and supplies
+-----------------------------------------------------------------------
+ROOMS.MedBay = {
+	Name="MedBay", FloorMat="Marble", FloorCol=C.TileWhite,
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",-4,11.5,0), fix("Fluor",4,11.5,0)},
 	Furniture={
-		fix("LabBench",-9,0,-7,0), fix("LabBench",-9,0,6,0), fix("LabBench",6,0,-7,180), fix("LabBench",6,0,6,180),
-		fix("FileCab",10,0,-10,0), fix("FileCab",10,0,0,0), fix("FileCab",10,0,10,0),
-		fix("Chair",-6,0,-7,30), fix("Chair",4,0,-7,-30), fix("Chair",-6,0,6,-30)
+		-- Hospital beds along left wall
+		fix("HospitalBed",-9,0,-7,0), fix("HospitalBed",-9,0,0,0), fix("HospitalBed",-9,0,7,0),
+		-- Curtain dividers between beds
+		fix("CurtainDivider",-6,0,-3,0), fix("CurtainDivider",-6,0,4,0),
+		-- Medicine cabinet and sink on right wall
+		fix("MedCabinet",10,0,-8,180), fix("MedCabinet",10,0,-2,180),
+		fix("BathroomSink",10,0,5,180),
+		-- Small desk with chair for doctor
+		fix("Desk",5,0,8,90), fix("Chair",3,0,8,90),
 	},
-	HidingSpots={{Type="UnderDesk",Off=Vector3.new(-9,0,6),Rot=0}},
+	HidingSpots={
+		{Type="BehindCurtain",Off=Vector3.new(-6,0,-3),Rot=0},
+		{Type="UnderBed",Off=Vector3.new(-9,0,7),Rot=0},
+	},
 }
 
-ROOMS.Bathroom = {
-	Name="Bathroom", FloorMat="Marble", FloorCol=C.TileWhite,
+-----------------------------------------------------------------------
+-- ROOM 2: BreakRoom — Staff lounge with vending machines and seating
+-----------------------------------------------------------------------
+ROOMS.BreakRoom = {
+	Name="BreakRoom", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",0,11.5,0), fix("Pipe",-5,11,0)},
+	Fixtures={fix("Fluor",0,11.5,0), fix("Fluor",0,11.5,-7)},
 	Furniture={
-		fix("BathroomStall",-8,0,-6,0), fix("BathroomStall",-8,0,6,0), fix("BathroomStall",0,0,-6,0), fix("BathroomStall",0,0,6,0),
-		fix("BathroomSink",9,0,-4,90), fix("BathroomSink",9,0,0,90), fix("BathroomSink",9,0,4,90)
+		-- Vending machines against back wall
+		fix("VendingMachine",-9,0,-9,0), fix("VendingMachine",-9,0,-4,0),
+		-- Counter with microwave along left wall
+		fix("Counter",-9,0,4,0), fix("MicrowaveUnit",-9,3,4,0),
+		-- Central table with chairs
+		fix("BreakTable",0,0,0,0),
+		fix("Chair",-2,0,2,30), fix("Chair",2,0,2,-30),
+		fix("Chair",-2,0,-2,150), fix("Chair",2,0,-2,-150),
+		-- Couch along right wall
+		fix("Couch",9,0,0,180), fix("Couch",9,0,6,180),
+		-- Trash can
+		fix("TrashCan",5,0,-9,0),
 	},
-	HidingSpots={{Type="StallHide",Off=Vector3.new(-8,0,6),Rot=0},{Type="StallHide",Off=Vector3.new(0,0,-6),Rot=0}},
+	HidingSpots={
+		{Type="UnderTable",Off=Vector3.new(0,0,0),Rot=0},
+	},
 }
 
-ROOMS.ServerRoom = {
-	Name="ServerRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
+-----------------------------------------------------------------------
+-- ROOM 3: ArchiveRoom — Records storage with filing cabinet rows
+-----------------------------------------------------------------------
+ROOMS.ArchiveRoom = {
+	Name="ArchiveRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-6,11,4), fix("Pipe",6,11,4)},
+	Fixtures={fix("DimBulb",-5,11,0), fix("DimBulb",5,11,0)},
 	Furniture={
-		fix("ServerRack",-10,0,-8,0), fix("ServerRack",-10,0,0,0), fix("ServerRack",-10,0,8,0),
-		fix("ServerRack",10,0,-8,180), fix("ServerRack",10,0,0,180), fix("ServerRack",10,0,8,180),
-		fix("ServerRack",-6,0,-8,0), fix("ServerRack",-6,0,0,0), fix("ServerRack",-6,0,8,0),
-		fix("Console",0,0,10,0)
+		-- Filing cabinet rows (3 rows running north–south)
+		fix("FileCab",-8,0,-8,0), fix("FileCab",-8,0,-3,0), fix("FileCab",-8,0,2,0), fix("FileCab",-8,0,7,0),
+		fix("FileCab",0,0,-8,0), fix("FileCab",0,0,-3,0), fix("FileCab",0,0,2,0), fix("FileCab",0,0,7,0),
+		fix("FileCab",8,0,-8,180), fix("FileCab",8,0,-3,180), fix("FileCab",8,0,2,180), fix("FileCab",8,0,7,180),
+		-- Reading desk in corner
+		fix("Desk",-4,0,9,0), fix("Chair",-2,0,9,0),
+		-- Box stacks
+		fix("Crate",9,0,9,15), fix("Crate",7,0,9,-10),
 	},
-	HidingSpots={{Type="RackGap",Off=Vector3.new(-10,0,4),Rot=0},{Type="RackGap",Off=Vector3.new(10,0,4),Rot=180}},
+	HidingSpots={
+		{Type="CabinetRow",Off=Vector3.new(-4,0,0),Rot=0},
+		{Type="CabinetRow",Off=Vector3.new(4,0,0),Rot=0},
+	},
 }
 
+-----------------------------------------------------------------------
+-- ROOM 4: SecurityStation — Guard post with monitors and lockers
+-----------------------------------------------------------------------
+ROOMS.SecurityStation = {
+	Name="SecurityStation", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
+	CeilCol=C.CeilingPanel,
+	Fixtures={fix("Fluor",0,11.5,0)},
+	Furniture={
+		-- Monitor desk (U-shaped setup at back)
+		fix("Console",-6,0,-9,0), fix("Console",0,0,-9,0), fix("Console",6,0,-9,0),
+		fix("Chair",-6,0,-7,0), fix("Chair",0,0,-7,0), fix("Chair",6,0,-7,0),
+		-- Locker row along right wall
+		fix("Locker",10,0,-6,180), fix("Locker",10,0,-1,180), fix("Locker",10,0,4,180),
+		-- Weapon rack (shelf) on left wall
+		fix("ShelfUnit",-10,0,-4,0), fix("ShelfUnit",-10,0,4,0),
+		-- Small table with radio equipment
+		fix("Desk",0,0,8,0), fix("ToolBox",2,0,8,0),
+	},
+	HidingSpots={
+		{Type="Locker",Off=Vector3.new(10,0,4),Rot=180},
+	},
+}
+
+-----------------------------------------------------------------------
+-- ROOM 5: MechanicalRoom — Boiler/HVAC with pipes and generators
+-----------------------------------------------------------------------
+ROOMS.MechanicalRoom = {
+	Name="MechanicalRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
+	CeilCol=C.DarkConcrete,
+	Fixtures={fix("DimBulb",0,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-5), fix("Pipe",0,11,5)},
+	Furniture={
+		-- Large generator unit (center-left)
+		fix("Generator",-7,0,0,0),
+		-- Barrels along back wall
+		fix("Barrel",9,0,-8,0), fix("Barrel",9,0,-4,0), fix("Barrel",7,0,-8,0),
+		-- Tool shelf on right wall
+		fix("ShelfUnit",10,0,2,180), fix("ShelfUnit",10,0,8,180),
+		-- Crates and toolbox
+		fix("Crate",-3,0,-9,20), fix("Crate",-6,0,-9,-15),
+		fix("ToolBox",5,0,9,0),
+		-- Valve wheel (small barrel)
+		fix("Barrel",-9,0,8,0),
+	},
+	HidingSpots={
+		{Type="BehindGenerator",Off=Vector3.new(-7,0,3),Rot=0},
+	},
+}
+
+-----------------------------------------------------------------------
+-- ROOM 6: Dormitory — Staff sleeping quarters with bunk beds
+-----------------------------------------------------------------------
+ROOMS.Dormitory = {
+	Name="Dormitory", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
+	CeilCol=C.CeilingPanel,
+	Fixtures={fix("DimBulb",-4,11,-4), fix("DimBulb",4,11,4)},
+	Furniture={
+		-- Bunk beds (cots) along left wall
+		fix("Cot",-9,0,-8,0), fix("Cot",-9,0,-3,0), fix("Cot",-9,0,2,0), fix("Cot",-9,0,7,0),
+		-- Bunk beds along right wall
+		fix("Cot",9,0,-8,180), fix("Cot",9,0,-3,180), fix("Cot",9,0,2,180),
+		-- Footlockers at end of each bed
+		fix("Footlocker",-6,0,-8,0), fix("Footlocker",-6,0,-3,0), fix("Footlocker",-6,0,2,0),
+		fix("Footlocker",6,0,-8,180), fix("Footlocker",6,0,-3,180),
+		-- Desk and chair in back corner
+		fix("Desk",5,0,8,90), fix("Chair",3,0,8,90),
+		-- Small shelf
+		fix("ShelfUnit",9,0,8,180),
+	},
+	HidingSpots={
+		{Type="UnderBed",Off=Vector3.new(-9,0,-3),Rot=0},
+		{Type="UnderBed",Off=Vector3.new(9,0,2),Rot=180},
+	},
+}
+
+-----------------------------------------------------------------------
+-- SPECIAL ROOMS (placed explicitly, not randomly)
+-----------------------------------------------------------------------
 ROOMS.Elevator = {
 	Name="Elevator", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete, IsSafe=true,
@@ -236,22 +282,33 @@ local FurnitureFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Fur
 -- Map: internal type → { model name, scale, Y rotation adjustment }
 -- Scale adjusts the model size, RotFix adds extra rotation if model faces wrong way
 local FURNITURE_MAP = {
-	Desk         = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
-	Chair        = { Model = "Chair - pemble08",  Scale = 1.0,  RotFix = 0   },
-	FileCab      = { Model = "cabinet 1",         Scale = 1.0,  RotFix = 0   },
-	WaterCooler  = { Model = "Refridgerator",     Scale = 0.8,  RotFix = 0   },
-	Barrel       = { Model = "cabinet 3",         Scale = 0.7,  RotFix = 0   },
-	ToolBox      = { Model = "small safe",        Scale = 0.6,  RotFix = 0   },
-	Console      = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
-	Cot          = { Model = "couch",             Scale = 1.0,  RotFix = 0   },
-	MedKit       = { Model = "small safe",        Scale = 0.5,  RotFix = 0   },
-	Locker       = { Model = "cabinet 2",         Scale = 1.0,  RotFix = 0   },
-	ShelfUnit    = { Model = "shelf1",            Scale = 1.0,  RotFix = 0   },
-	Crate        = { Model = "cabinet 4",         Scale = 0.8,  RotFix = 0   },
-	LabBench     = { Model = "dinner table",      Scale = 0.9,  RotFix = 0   },
-	BathroomSink = { Model = "bathroom sink",     Scale = 1.0,  RotFix = 0   },
-	ServerRack   = { Model = "cabinet 4",         Scale = 1.2,  RotFix = 0   },
-	BathroomStall= { Model = "cabinet 3",         Scale = 1.0,  RotFix = 0   },
+	-- Core furniture (reused across rooms)
+	Desk           = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
+	Chair          = { Model = "Chair - pemble08",  Scale = 1.0,  RotFix = 0   },
+	FileCab        = { Model = "cabinet 1",         Scale = 1.0,  RotFix = 0   },
+	Barrel         = { Model = "cabinet 3",         Scale = 0.7,  RotFix = 0   },
+	ToolBox        = { Model = "small safe",        Scale = 0.6,  RotFix = 0   },
+	Console        = { Model = "work station",      Scale = 1.0,  RotFix = 0   },
+	Cot            = { Model = "couch",             Scale = 1.0,  RotFix = 0   },
+	Locker         = { Model = "cabinet 2",         Scale = 1.0,  RotFix = 0   },
+	ShelfUnit      = { Model = "shelf1",            Scale = 1.0,  RotFix = 0   },
+	Crate          = { Model = "cabinet 4",         Scale = 0.8,  RotFix = 0   },
+	BathroomSink   = { Model = "bathroom sink",     Scale = 1.0,  RotFix = 0   },
+	-- MedBay furniture
+	HospitalBed    = { Model = "couch",             Scale = 1.1,  RotFix = 0   },
+	CurtainDivider = { Model = "shelf1",            Scale = 0.6,  RotFix = 0   },
+	MedCabinet     = { Model = "cabinet 1",         Scale = 0.9,  RotFix = 0   },
+	-- BreakRoom furniture
+	VendingMachine = { Model = "Refridgerator",     Scale = 1.0,  RotFix = 0   },
+	Counter        = { Model = "dinner table",      Scale = 0.8,  RotFix = 0   },
+	MicrowaveUnit  = { Model = "small safe",        Scale = 0.4,  RotFix = 0   },
+	BreakTable     = { Model = "dinner table",      Scale = 1.0,  RotFix = 0   },
+	Couch          = { Model = "couch",             Scale = 1.0,  RotFix = 0   },
+	TrashCan       = { Model = "cabinet 3",         Scale = 0.4,  RotFix = 0   },
+	-- MechanicalRoom furniture
+	Generator      = { Model = "cabinet 4",         Scale = 1.5,  RotFix = 0   },
+	-- Dormitory furniture
+	Footlocker     = { Model = "small safe",        Scale = 0.7,  RotFix = 0   },
 }
 
 -- Scale all BaseParts in a model
@@ -633,8 +690,10 @@ local mapFolder = Instance.new("Folder")
 mapFolder.Name = "GeneratedMap"
 mapFolder.Parent = workspace
 
-local rng = Random.new(SEED)
-mapFolder:SetAttribute("Seed", SEED)
+local actualSeed = SEED == 0 and (os.time() + math.random(1, 99999)) or SEED
+local rng = Random.new(actualSeed)
+mapFolder:SetAttribute("Seed", actualSeed)
+print("[Bootstrap] Using seed:", actualSeed)
 
 for floor = 1, FLOORS do
 	generateFloor(floor, rng, mapFolder)

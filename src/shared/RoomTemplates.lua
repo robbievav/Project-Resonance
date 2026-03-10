@@ -1,6 +1,8 @@
 --[[
 	RoomTemplates.lua — Defines room archetype blueprints for the procedural generator.
 	Each template specifies dimensions, door positions, fixture spots, and furniture lists.
+	
+	6 Unique Rooms + Elevator/Stairwell (special-purpose)
 ]]
 
 local Config = require(script.Parent.Config)
@@ -20,34 +22,50 @@ local function fixture(fType, ox, oy, oz, rot)
 end
 
 -------------------------------------------------------------------------------
--- HALLWAY — long, narrow corridor with flickering fluorescents
+-- ROOM 1: MedBay — Medical facility with hospital beds and supplies
 -------------------------------------------------------------------------------
-RoomTemplates.Hallway = {
-	Name = "Hallway",
-	SizeMultiplier = Vector3.new(3, 1, 1),   -- 3× long, 1× wide
-	FloorMaterial  = Config.Materials.Floor,
-	FloorColor     = Config.Colors.FloorTile,
+RoomTemplates.MedBay = {
+	Name = "MedBay",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial  = Config.Materials.Tile,
+	FloorColor     = Config.Colors.TileWhite,
 	WallMaterial   = Config.Materials.Wall,
 	WallColor      = Config.Colors.WallPaint,
 	CeilingColor   = Config.Colors.CeilingPanel,
 	Doors = {
-		door("NegZ", 0),   -- entrance
-		door("PosZ", 0),   -- exit
+		door("NegZ", 0),
 	},
 	Fixtures = {
-		fixture("FluorescentLight", 0, 11.5, -8),
-		fixture("FluorescentLight", 0, 11.5, 0),
-		fixture("FluorescentLight", 0, 11.5, 8),
+		fixture("FluorescentLight", -4, 11.5, 0),
+		fixture("FluorescentLight", 4, 11.5, 0),
 	},
-	Furniture = {},   -- hallways are sparse
-	HidingSpots = {}, -- nowhere to hide
+	Furniture = {
+		-- Hospital beds along left wall
+		fixture("HospitalBed", -9, 0, -7, 0),
+		fixture("HospitalBed", -9, 0, 0, 0),
+		fixture("HospitalBed", -9, 0, 7, 0),
+		-- Curtain dividers between beds
+		fixture("CurtainDivider", -6, 0, -3, 0),
+		fixture("CurtainDivider", -6, 0, 4, 0),
+		-- Medicine cabinet and sink on right wall
+		fixture("MedCabinet", 10, 0, -8, 180),
+		fixture("MedCabinet", 10, 0, -2, 180),
+		fixture("BathroomSink", 10, 0, 5, 180),
+		-- Doctor station
+		fixture("Desk", 5, 0, 8, 90),
+		fixture("Chair", 3, 0, 8, 90),
+	},
+	HidingSpots = {
+		{ Type = "BehindCurtain", Offset = Vector3.new(-6, 0, -3), Rotation = 0 },
+		{ Type = "UnderBed", Offset = Vector3.new(-9, 0, 7), Rotation = 0 },
+	},
 }
 
 -------------------------------------------------------------------------------
--- OFFICE — desks, filing cabinets, liminal office furniture
+-- ROOM 2: BreakRoom — Staff lounge with vending machines and seating
 -------------------------------------------------------------------------------
-RoomTemplates.Office = {
-	Name = "Office",
+RoomTemplates.BreakRoom = {
+	Name = "BreakRoom",
 	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
 	FloorMaterial  = Config.Materials.Floor,
 	FloorColor     = Config.Colors.FloorTile,
@@ -55,34 +73,128 @@ RoomTemplates.Office = {
 	WallColor      = Config.Colors.WallPaint,
 	CeilingColor   = Config.Colors.CeilingPanel,
 	Doors = {
-		door("NegZ", -3),
+		door("NegZ", 0),
 	},
 	Fixtures = {
 		fixture("FluorescentLight", 0, 11.5, 0),
-		fixture("FluorescentLight", -6, 11.5, 5),
+		fixture("FluorescentLight", 0, 11.5, -7),
 	},
 	Furniture = {
-		fixture("Desk",          -6, 0, -4, 0),
-		fixture("Desk",          -6, 0,  4, 0),
-		fixture("Desk",           4, 0, -4, 180),
-		fixture("FilingCabinet",  7, 0, -7, 90),
-		fixture("FilingCabinet",  7, 0,  7, 90),
-		fixture("Chair",         -4, 0, -4, 30),
-		fixture("Chair",         -4, 0,  4, -20),
-		fixture("WaterCooler",    7, 0,  0, -90),
+		-- Vending machines against back wall
+		fixture("VendingMachine", -9, 0, -9, 0),
+		fixture("VendingMachine", -9, 0, -4, 0),
+		-- Counter with microwave
+		fixture("Counter", -9, 0, 4, 0),
+		fixture("MicrowaveUnit", -9, 3, 4, 0),
+		-- Central table with chairs
+		fixture("BreakTable", 0, 0, 0, 0),
+		fixture("Chair", -2, 0, 2, 30),
+		fixture("Chair", 2, 0, 2, -30),
+		fixture("Chair", -2, 0, -2, 150),
+		fixture("Chair", 2, 0, -2, -150),
+		-- Couch along right wall
+		fixture("Couch", 9, 0, 0, 180),
+		fixture("Couch", 9, 0, 6, 180),
+		-- Trash can
+		fixture("TrashCan", 5, 0, -9, 0),
 	},
 	HidingSpots = {
-		{ Type = "UnderDesk", Offset = Vector3.new(-6, 0, -4), Rotation = 0 },
-		{ Type = "UnderDesk", Offset = Vector3.new(4, 0, -4), Rotation = 180 },
+		{ Type = "UnderTable", Offset = Vector3.new(0, 0, 0), Rotation = 0 },
 	},
 }
 
 -------------------------------------------------------------------------------
--- MAINTENANCE TUNNEL — narrow, dark, pipes along ceiling
+-- ROOM 3: ArchiveRoom — Records storage with filing cabinet rows
 -------------------------------------------------------------------------------
-RoomTemplates.MaintenanceTunnel = {
-	Name = "MaintenanceTunnel",
-	SizeMultiplier = Vector3.new(2.5, 0.75, 0.6),  -- long and cramped
+RoomTemplates.ArchiveRoom = {
+	Name = "ArchiveRoom",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial  = Config.Materials.Floor,
+	FloorColor     = Config.Colors.DarkConcrete,
+	WallMaterial   = Config.Materials.Wall,
+	WallColor      = Config.Colors.DarkConcrete,
+	CeilingColor   = Config.Colors.DarkConcrete,
+	Doors = {
+		door("NegZ", 0),
+	},
+	Fixtures = {
+		fixture("DimBulb", -5, 11, 0),
+		fixture("DimBulb", 5, 11, 0),
+	},
+	Furniture = {
+		-- Filing cabinet rows (3 rows running north-south)
+		fixture("FilingCabinet", -8, 0, -8, 0),
+		fixture("FilingCabinet", -8, 0, -3, 0),
+		fixture("FilingCabinet", -8, 0, 2, 0),
+		fixture("FilingCabinet", -8, 0, 7, 0),
+		fixture("FilingCabinet", 0, 0, -8, 0),
+		fixture("FilingCabinet", 0, 0, -3, 0),
+		fixture("FilingCabinet", 0, 0, 2, 0),
+		fixture("FilingCabinet", 0, 0, 7, 0),
+		fixture("FilingCabinet", 8, 0, -8, 180),
+		fixture("FilingCabinet", 8, 0, -3, 180),
+		fixture("FilingCabinet", 8, 0, 2, 180),
+		fixture("FilingCabinet", 8, 0, 7, 180),
+		-- Reading desk
+		fixture("Desk", -4, 0, 9, 0),
+		fixture("Chair", -2, 0, 9, 0),
+		-- Box stacks
+		fixture("Crate", 9, 0, 9, 15),
+		fixture("Crate", 7, 0, 9, -10),
+	},
+	HidingSpots = {
+		{ Type = "CabinetRow", Offset = Vector3.new(-4, 0, 0), Rotation = 0 },
+		{ Type = "CabinetRow", Offset = Vector3.new(4, 0, 0), Rotation = 0 },
+	},
+}
+
+-------------------------------------------------------------------------------
+-- ROOM 4: SecurityStation — Guard post with monitors and lockers
+-------------------------------------------------------------------------------
+RoomTemplates.SecurityStation = {
+	Name = "SecurityStation",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial  = Config.Materials.Floor,
+	FloorColor     = Config.Colors.FloorTile,
+	WallMaterial   = Config.Materials.Wall,
+	WallColor      = Config.Colors.WallPaint,
+	CeilingColor   = Config.Colors.CeilingPanel,
+	Doors = {
+		door("NegZ", 0),
+	},
+	Fixtures = {
+		fixture("FluorescentLight", 0, 11.5, 0),
+	},
+	Furniture = {
+		-- Monitor desks at back
+		fixture("Console", -6, 0, -9, 0),
+		fixture("Console", 0, 0, -9, 0),
+		fixture("Console", 6, 0, -9, 0),
+		fixture("Chair", -6, 0, -7, 0),
+		fixture("Chair", 0, 0, -7, 0),
+		fixture("Chair", 6, 0, -7, 0),
+		-- Locker row along right wall
+		fixture("Locker", 10, 0, -6, 180),
+		fixture("Locker", 10, 0, -1, 180),
+		fixture("Locker", 10, 0, 4, 180),
+		-- Weapon racks (shelves) on left wall
+		fixture("ShelfUnit", -10, 0, -4, 0),
+		fixture("ShelfUnit", -10, 0, 4, 0),
+		-- Radio desk
+		fixture("Desk", 0, 0, 8, 0),
+		fixture("ToolBox", 2, 0, 8, 0),
+	},
+	HidingSpots = {
+		{ Type = "Locker", Offset = Vector3.new(10, 0, 4), Rotation = 180 },
+	},
+}
+
+-------------------------------------------------------------------------------
+-- ROOM 5: MechanicalRoom — Boiler/HVAC with pipes and generators
+-------------------------------------------------------------------------------
+RoomTemplates.MechanicalRoom = {
+	Name = "MechanicalRoom",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
 	FloorMaterial  = Config.Materials.MetalFloor,
 	FloorColor     = Config.Colors.MetalGrate,
 	WallMaterial   = Config.Materials.Wall,
@@ -90,90 +202,84 @@ RoomTemplates.MaintenanceTunnel = {
 	CeilingColor   = Config.Colors.DarkConcrete,
 	Doors = {
 		door("NegZ", 0),
-		door("PosZ", 0),
 	},
 	Fixtures = {
-		fixture("DimBulb", 0, 7, -6),
-		fixture("DimBulb", 0, 7,  6),
-		fixture("Pipe",   -2, 8,  0),
-		fixture("Pipe",    2, 8,  0),
+		fixture("DimBulb", 0, 11, 0),
+		fixture("Pipe", -4, 11, 0),
+		fixture("Pipe", 4, 11, 0),
+		fixture("Pipe", 0, 11, -5),
+		fixture("Pipe", 0, 11, 5),
 	},
 	Furniture = {
-		fixture("Barrel",  2, 0, -4),
-		fixture("ToolBox", -2, 0,  5),
+		-- Large generator unit
+		fixture("Generator", -7, 0, 0, 0),
+		-- Barrels along back wall
+		fixture("Barrel", 9, 0, -8, 0),
+		fixture("Barrel", 9, 0, -4, 0),
+		fixture("Barrel", 7, 0, -8, 0),
+		-- Tool shelves
+		fixture("ShelfUnit", 10, 0, 2, 180),
+		fixture("ShelfUnit", 10, 0, 8, 180),
+		-- Crates and toolbox
+		fixture("Crate", -3, 0, -9, 20),
+		fixture("Crate", -6, 0, -9, -15),
+		fixture("ToolBox", 5, 0, 9, 0),
+		-- Valve barrel
+		fixture("Barrel", -9, 0, 8, 0),
 	},
 	HidingSpots = {
-		{ Type = "Locker", Offset = Vector3.new(-3, 0, -6), Rotation = 0 },
+		{ Type = "BehindGenerator", Offset = Vector3.new(-7, 0, 3), Rotation = 0 },
 	},
 }
 
 -------------------------------------------------------------------------------
--- OBSERVATION DECK — open room with windows and consoles
+-- ROOM 6: Dormitory — Staff sleeping quarters with bunk beds
 -------------------------------------------------------------------------------
-RoomTemplates.ObservationDeck = {
-	Name = "ObservationDeck",
-	SizeMultiplier = Vector3.new(2, 1, 2),
-	FloorMaterial  = Config.Materials.Tile,
+RoomTemplates.Dormitory = {
+	Name = "Dormitory",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial  = Config.Materials.Floor,
 	FloorColor     = Config.Colors.FloorTile,
 	WallMaterial   = Config.Materials.Wall,
 	WallColor      = Config.Colors.WallPaint,
 	CeilingColor   = Config.Colors.CeilingPanel,
-	Doors = {
-		door("NegX", 0),
-	},
-	Fixtures = {
-		fixture("FluorescentLight", 0, 11.5, 0),
-		fixture("FluorescentLight", -8, 11.5, -8),
-		fixture("FluorescentLight",  8, 11.5,  8),
-		fixture("WindowPanel",  10, 5, -8, 90),
-		fixture("WindowPanel",  10, 5,  0, 90),
-		fixture("WindowPanel",  10, 5,  8, 90),
-	},
-	Furniture = {
-		fixture("Console",  -6, 0, 0, 0),
-		fixture("Console",  -6, 0, 6, 0),
-		fixture("MonitorBank", 8, 3, -6, 90),
-		fixture("Chair",    -4, 0, 0, 0),
-		fixture("Chair",    -4, 0, 6, 0),
-	},
-	HidingSpots = {},
-}
-
--------------------------------------------------------------------------------
--- SAFE HUB — larger, well-lit, locked entry
--------------------------------------------------------------------------------
-RoomTemplates.SafeHub = {
-	Name = "SafeHub",
-	SizeMultiplier = Vector3.new(2, 1.2, 2),
-	FloorMaterial  = Config.Materials.Tile,
-	FloorColor     = Config.Colors.FloorTile,
-	WallMaterial   = Config.Materials.Wall,
-	WallColor      = Config.Colors.WallPaint,
-	CeilingColor   = Config.Colors.CeilingPanel,
-	IsSafe         = true,             -- AI cannot enter
 	Doors = {
 		door("NegZ", 0),
 	},
 	Fixtures = {
-		fixture("FluorescentLight", -6, 13, -6),
-		fixture("FluorescentLight",  6, 13, -6),
-		fixture("FluorescentLight", -6, 13,  6),
-		fixture("FluorescentLight",  6, 13,  6),
+		fixture("DimBulb", -4, 11, -4),
+		fixture("DimBulb", 4, 11, 4),
 	},
 	Furniture = {
-		fixture("Desk",    -8, 0, -8, 0),
-		fixture("Desk",     8, 0, -8, 180),
-		fixture("Cot",      8, 0,  6, 0),
-		fixture("MedKit",  -8, 3,  8, 0),
-		fixture("Locker",  -9, 0,  0, -90),
+		-- Bunk beds (cots) along left wall
+		fixture("Cot", -9, 0, -8, 0),
+		fixture("Cot", -9, 0, -3, 0),
+		fixture("Cot", -9, 0, 2, 0),
+		fixture("Cot", -9, 0, 7, 0),
+		-- Bunk beds along right wall
+		fixture("Cot", 9, 0, -8, 180),
+		fixture("Cot", 9, 0, -3, 180),
+		fixture("Cot", 9, 0, 2, 180),
+		-- Footlockers
+		fixture("Footlocker", -6, 0, -8, 0),
+		fixture("Footlocker", -6, 0, -3, 0),
+		fixture("Footlocker", -6, 0, 2, 0),
+		fixture("Footlocker", 6, 0, -8, 180),
+		fixture("Footlocker", 6, 0, -3, 180),
+		-- Desk and chair
+		fixture("Desk", 5, 0, 8, 90),
+		fixture("Chair", 3, 0, 8, 90),
+		-- Shelf
+		fixture("ShelfUnit", 9, 0, 8, 180),
 	},
 	HidingSpots = {
-		{ Type = "Locker", Offset = Vector3.new(-9, 0, 0), Rotation = -90 },
+		{ Type = "UnderBed", Offset = Vector3.new(-9, 0, -3), Rotation = 0 },
+		{ Type = "UnderBed", Offset = Vector3.new(9, 0, 2), Rotation = 180 },
 	},
 }
 
 -------------------------------------------------------------------------------
--- ELEVATOR — spawn room, placed explicitly on each floor
+-- SPECIAL: Elevator — spawn room, placed explicitly on each floor
 -------------------------------------------------------------------------------
 RoomTemplates.Elevator = {
 	Name = "Elevator",
@@ -197,141 +303,11 @@ RoomTemplates.Elevator = {
 }
 
 -------------------------------------------------------------------------------
--- STORAGE ROOM — shelves, crates, dim lighting
--------------------------------------------------------------------------------
-RoomTemplates.StorageRoom = {
-	Name = "StorageRoom",
-	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
-	FloorMaterial  = Config.Materials.Floor,
-	FloorColor     = Config.Colors.DarkConcrete,
-	WallMaterial   = Config.Materials.Wall,
-	WallColor      = Config.Colors.DarkConcrete,
-	CeilingColor   = Config.Colors.DarkConcrete,
-	Doors = {
-		door("NegZ", 0),
-	},
-	Fixtures = {
-		fixture("DimBulb", 0, 11, 0),
-		fixture("DimBulb", -6, 11, -5),
-	},
-	Furniture = {
-		fixture("ShelfUnit", -7, 0, -6, 0),
-		fixture("ShelfUnit", -7, 0,  0, 0),
-		fixture("ShelfUnit",  7, 0, -6, 180),
-		fixture("ShelfUnit",  7, 0,  3, 180),
-		fixture("Crate",      0, 0, -5, 15),
-		fixture("Crate",      2, 0, -3, -10),
-		fixture("Barrel",    -3, 0,  6, 0),
-		fixture("Locker",     5, 0,  7, 90),
-	},
-	HidingSpots = {
-		{ Type = "Locker", Offset = Vector3.new(5, 0, 7), Rotation = 90 },
-		{ Type = "ShelfCrawl", Offset = Vector3.new(-7, 0, -3), Rotation = 0 },
-	},
-}
-
--------------------------------------------------------------------------------
--- LABORATORY — lab benches, chemical equipment, broken glass
--------------------------------------------------------------------------------
-RoomTemplates.Laboratory = {
-	Name = "Laboratory",
-	SizeMultiplier = Vector3.new(2, 1, 1.5),
-	FloorMaterial  = "Marble",
-	FloorColor     = Config.Colors.LabWhite,
-	WallMaterial   = Config.Materials.Wall,
-	WallColor      = Config.Colors.LabWhite,
-	CeilingColor   = Config.Colors.CeilingPanel,
-	Doors = {
-		door("NegZ", -4),
-		door("PosX", 0),
-	},
-	Fixtures = {
-		fixture("FluorescentLight", -6, 11.5, 0),
-		fixture("FluorescentLight",  6, 11.5, 0),
-	},
-	Furniture = {
-		fixture("LabBench", -8, 0, -4, 0),
-		fixture("LabBench", -8, 0,  4, 0),
-		fixture("LabBench",  4, 0, -4, 180),
-		fixture("FilingCabinet", 10, 0, -8, 90),
-		fixture("Chair",   -6, 0, -4, 30),
-		fixture("Chair",    6, 0, -4, -30),
-	},
-	HidingSpots = {
-		{ Type = "UnderDesk", Offset = Vector3.new(-8, 0, 4), Rotation = 0 },
-	},
-}
-
--------------------------------------------------------------------------------
--- BATHROOM — tiled floor, stall partitions, dripping faucets
--------------------------------------------------------------------------------
-RoomTemplates.Bathroom = {
-	Name = "Bathroom",
-	SizeMultiplier = Vector3.new(1.2, 0.9, 1),
-	FloorMaterial  = Config.Materials.Tile,
-	FloorColor     = Config.Colors.TileWhite,
-	WallMaterial   = Config.Materials.Tile,
-	WallColor      = Config.Colors.TileWhite,
-	CeilingColor   = Config.Colors.CeilingPanel,
-	Doors = {
-		door("NegZ", 0),
-	},
-	Fixtures = {
-		fixture("FluorescentLight", 0, 10, 0),
-		fixture("Pipe", -4, 9, 0),
-	},
-	Furniture = {
-		fixture("BathroomStall", -5, 0, -3, 0),
-		fixture("BathroomStall", -5, 0,  3, 0),
-		fixture("BathroomStall",  0, 0, -3, 0),
-		fixture("BathroomSink",   5, 0,  0, 90),
-	},
-	HidingSpots = {
-		{ Type = "StallHide", Offset = Vector3.new(-5, 0, 3), Rotation = 0 },
-		{ Type = "StallHide", Offset = Vector3.new(0, 0, -3), Rotation = 0 },
-	},
-}
-
--------------------------------------------------------------------------------
--- SERVER ROOM — tall server racks, blue glow, cable trays
--------------------------------------------------------------------------------
-RoomTemplates.ServerRoom = {
-	Name = "ServerRoom",
-	SizeMultiplier = Vector3.new(1.5, 1.2, 2),
-	FloorMaterial  = Config.Materials.MetalFloor,
-	FloorColor     = Config.Colors.MetalGrate,
-	WallMaterial   = Config.Materials.Wall,
-	WallColor      = Config.Colors.ServerBlue,
-	CeilingColor   = Config.Colors.DarkConcrete,
-	Doors = {
-		door("NegZ", 0),
-	},
-	Fixtures = {
-		fixture("DimBulb", 0, 13, 0),
-		fixture("Pipe",   -6, 13, 0),
-		fixture("Pipe",    6, 13, 0),
-	},
-	Furniture = {
-		fixture("ServerRack", -7, 0, -8, 0),
-		fixture("ServerRack", -7, 0, -2, 0),
-		fixture("ServerRack", -7, 0,  4, 0),
-		fixture("ServerRack",  7, 0, -8, 180),
-		fixture("ServerRack",  7, 0, -2, 180),
-		fixture("ServerRack",  7, 0,  4, 180),
-		fixture("Console",     0, 0,  8, 0),
-	},
-	HidingSpots = {
-		{ Type = "RackGap", Offset = Vector3.new(-7, 0, 1), Rotation = 0 },
-		{ Type = "RackGap", Offset = Vector3.new(7, 0, 1), Rotation = 180 },
-	},
-}
-
--------------------------------------------------------------------------------
--- STAIRWELL — vertical shaft connecting floors
+-- SPECIAL: Stairwell — vertical shaft connecting floors
 -------------------------------------------------------------------------------
 RoomTemplates.Stairwell = {
 	Name = "Stairwell",
-	SizeMultiplier = Vector3.new(1, 2, 1),  -- extra tall
+	SizeMultiplier = Vector3.new(1, 2, 1),
 	FloorMaterial  = Config.Materials.Wall,
 	FloorColor     = Config.Colors.DarkConcrete,
 	WallMaterial   = Config.Materials.Wall,
@@ -350,7 +326,7 @@ RoomTemplates.Stairwell = {
 }
 
 -------------------------------------------------------------------------------
--- Utility: Get a weighted-random room type name (excludes Elevator)
+-- Utility: Get a weighted-random room type name (excludes Elevator/Stairwell)
 -------------------------------------------------------------------------------
 function RoomTemplates.GetRandomType(rng)
 	local totalWeight = 0
@@ -366,7 +342,7 @@ function RoomTemplates.GetRandomType(rng)
 			return name
 		end
 	end
-	return "Hallway"  -- fallback
+	return "MedBay"  -- fallback
 end
 
 return RoomTemplates
