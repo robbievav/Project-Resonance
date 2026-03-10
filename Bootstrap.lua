@@ -246,7 +246,7 @@ ROOMS.Elevator = {
 	Name="Elevator", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete, IsSafe=true,
 	Fixtures={fix("DimBulb",0,11,0)},
-	Furniture={fix("ElevatorPanel",-17.85,3,5,0)},
+	Furniture={fix("ElevatorPanel",-17.35,3,5,0)},
 	HidingSpots={},
 }
 
@@ -334,7 +334,7 @@ local function cloneFurniture(typeName, pos, rot, parent)
 	if typeName == "ElevatorPanel" then
 		local r = CFrame.Angles(0, math.rad(rot), 0)
 		mp({Name="ElevatorPanel",Size=Vector3.new(0.3,1.5,1),CFrame=CFrame.new(pos)*r,Material=Enum.Material.Metal,Color=Color3.fromRGB(70,70,75),Parent=parent})
-		local btn = mp({Name="ElevatorButton",Size=Vector3.new(0.35,0.3,0.3),CFrame=CFrame.new(pos+Vector3.new(-0.05,0.3,0))*r,Material=Enum.Material.Neon,Color=Color3.fromRGB(200,60,40),Parent=parent})
+		local btn = mp({Name="ElevatorButton",Size=Vector3.new(0.35,0.3,0.3),CFrame=CFrame.new(pos+Vector3.new(0.15,0.3,0))*r,Material=Enum.Material.Neon,Color=Color3.fromRGB(200,60,40),Parent=parent})
 		local pp = Instance.new("ProximityPrompt"); pp.ActionText="Call Elevator"; pp.ObjectText="Elevator"; pp.MaxActivationDistance=8; pp.HoldDuration=0.5; pp.Parent=btn
 		return
 	end
