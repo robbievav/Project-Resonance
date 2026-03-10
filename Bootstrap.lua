@@ -136,13 +136,13 @@ ROOMS.BreakRoom = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("Fluor",0,11.5,0), fix("Fluor",0,11.5,-7)},
 	Furniture={
-		-- Vending machine tucked in back-left corner
-		fix("VendingMachine",-5,0,-5,0),
+		-- Fridge in back-left area
+		fix("VendingMachine",-11.25,0,-16,0),
 		-- Central dining table with a chair
 		fix("BreakTable",0,0,0,0),
-		fix("Chair",-2,0,1,0),
-		-- Couch in front-right corner, facing center
-		fix("Couch",4,0,4,180),
+		fix("Chair",-4.1,0,1,0),
+		-- Couch on the right side, facing center
+		fix("Couch",10.1,0,8.6,180),
 		-- Trash can beside vending machine
 		fix("TrashCan",-5,0,-3,0),
 	},
@@ -224,10 +224,9 @@ ROOMS.Dormitory = {
 	CeilCol=C.CeilingPanel,
 	Fixtures={fix("DimBulb",-4,11,-4), fix("DimBulb",4,11,4)},
 	Furniture={
-		-- Row of beds along the left wall, facing right
-		fix("Cot",-4,0,-4,90), fix("Cot",-4,0,4,90),
-		-- Row of beds along the right wall, facing left
-		fix("Cot",4,0,-4,-90), fix("Cot",4,0,4,-90),
+		-- Cots spaced around the room
+		fix("Cot",13.9,0,6,90), fix("Cot",-6.5,0,6.5,90),
+		fix("Cot",-14.4,0,-7.6,-90), fix("Cot",7,0,-9.5,-90),
 		-- Footlockers at the foot of each bed row
 		fix("Footlocker",-2,0,-4,0), fix("Footlocker",-2,0,4,0),
 	},
