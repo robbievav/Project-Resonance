@@ -159,28 +159,32 @@ local function onEnterHiding(spot)
 	local hideType = spot:FindFirstChild("HideType")
 	if hideType then
 		local t = hideType.Value
+		camera.CameraType = Enum.CameraType.Scriptable
 		if t == "Locker" then
 			-- Peering through locker slits
-			camera.CameraType = Enum.CameraType.Scriptable
 			camera.CFrame = spotCF * CFrame.new(0, 0.5, -0.5) * CFrame.Angles(0, math.pi, 0)
-		elseif t == "UnderDesk" then
-			-- Low angle under desk
-			camera.CameraType = Enum.CameraType.Scriptable
-			camera.CFrame = spotCF * CFrame.new(0, -1, 0.5) * CFrame.Angles(math.rad(10), math.pi, 0)
+		elseif t == "UnderDesk" or t == "UnderTable" then
+			-- Low angle under desk/table, looking out
+			camera.CFrame = spotCF * CFrame.new(0, -1.2, 0.6) * CFrame.Angles(math.rad(8), math.pi, 0)
+		elseif t == "UnderBed" then
+			-- Floor-level, pressed under bed frame
+			camera.CFrame = spotCF * CFrame.new(0, -1.5, 0.8) * CFrame.Angles(math.rad(5), math.pi, 0)
+		elseif t == "BehindGenerator" then
+			-- Crouched behind machinery, peeking sideways
+			camera.CFrame = spotCF * CFrame.new(0.8, -0.8, 0) * CFrame.Angles(math.rad(5), math.pi * 1.5, 0)
+		elseif t == "CabinetRow" then
+			-- Pressed between filing cabinets, narrow slit view
+			camera.CFrame = spotCF * CFrame.new(0, 0.3, -0.2) * CFrame.Angles(0, math.pi, 0)
 		elseif t == "StallHide" then
 			-- Behind stall door
-			camera.CameraType = Enum.CameraType.Scriptable
 			camera.CFrame = spotCF * CFrame.new(0, 0.3, -0.3) * CFrame.Angles(0, math.pi, 0)
 		elseif t == "RackGap" then
 			-- Between server racks
-			camera.CameraType = Enum.CameraType.Scriptable
 			camera.CFrame = spotCF * CFrame.new(0, 0.5, -0.3) * CFrame.Angles(0, math.pi, 0)
 		elseif t == "ShelfCrawl" then
 			-- Behind shelves, low
-			camera.CameraType = Enum.CameraType.Scriptable
 			camera.CFrame = spotCF * CFrame.new(0, -0.5, 0.3) * CFrame.Angles(math.rad(5), math.pi, 0)
 		else
-			camera.CameraType = Enum.CameraType.Scriptable
 			camera.CFrame = spotCF * CFrame.new(0, 0.5, -0.5) * CFrame.Angles(0, math.pi, 0)
 		end
 	end
