@@ -148,6 +148,17 @@ if ElevatorUsed then
 	ElevatorUsed.OnClientEvent:Connect(function(action)
 		if action == "FadeOut" then
 			doFadeOut()
+			-- Reset button to red — key is consumed, need a new one on the next floor
+			task.delay(0.5, function()
+				for _, panel in ipairs(game:GetService("CollectionService"):GetTagged("ElevatorPanel")) do
+					local btn = panel.Parent and panel.Parent:FindFirstChild("ElevatorButton")
+					if btn then
+						TweenService:Create(btn, TweenInfo.new(0.3), {
+							Color = Color3.fromRGB(200, 60, 40)
+						}):Play()
+					end
+				end
+			end)
 		elseif action == "FadeIn" then
 			doFadeIn()
 		elseif action == "NoKey" then

@@ -147,6 +147,9 @@ local function teleportToFloor(player, targetFloor)
 
 	task.wait(0.3)
 
+	-- Clear the key for the floor they just left — must find a new one each floor
+	player:SetAttribute("KeyFloor_" .. currentFloor, nil)
+
 	-- Fade back in
 	if elevUsed then elevUsed:FireClient(player, "FadeIn") end
 
