@@ -148,8 +148,8 @@ RoomTemplates.YellowOffice = {
 		fixture("PartitionWall", -4, 0, -4, 0),
 		fixture("PartitionWall", 2, 0, 2, 90),
 		fixture("PartitionWall", 8, 0, -4, 0),
-		fixture("Desk", -13, 0, -8, 90),
-		fixture("Chair", -10, 0, -8, -90),
+		fixture("Desk", 5, 0, -1, 0),
+		fixture("Chair", 1, 0, -2.45, -90),
 		fixture("FilingCabinet", 12, 0, -8, 180)
 	},
 	HidingSpots = {},
