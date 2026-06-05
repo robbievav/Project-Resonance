@@ -115,7 +115,7 @@ local ROOMS = {}
 ROOMS.MedBay = {
 	Name="MedBay", FloorMat="Marble", FloorCol=C.TileWhite,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("Fluor",-8,11.5,0), fix("Fluor",8,11.5,0)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
 		-- Hospital beds spaced apart, facing inward
 		fix("HospitalBed",-7.5,0,10,90), fix("HospitalBed",-15.5,0,-12.2,-90),
@@ -153,7 +153,7 @@ ROOMS.BreakRoom = {
 ROOMS.ArchiveRoom = {
 	Name="ArchiveRoom", FloorMat="SmoothPlastic", FloorCol=C.DarkConcrete,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",-8,11,0), fix("DimBulb",8,11,0), fix("DimBulb",0,11,-8)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
 		-- Row of filing cabinets along back wall
 		fix("FileCab",-5,0,-5,0), fix("FileCab",-2,0,-5,0),
@@ -192,7 +192,7 @@ ROOMS.SecurityStation = {
 ROOMS.MechanicalRoom = {
 	Name="MechanicalRoom", FloorMat="DiamondPlate", FloorCol=C.MetalGrate,
 	CeilCol=C.DarkConcrete,
-	Fixtures={fix("DimBulb",0,11,0), fix("DimBulb",-8,11,0), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-8), fix("Pipe",0,11,8)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6), fix("Pipe",-4,11,0), fix("Pipe",4,11,0), fix("Pipe",0,11,-8), fix("Pipe",0,11,8)},
 	Furniture={
 		-- Generator in the back-left corner
 		fix("Generator",-4,0,-4,0),
@@ -216,7 +216,7 @@ ROOMS.MechanicalRoom = {
 ROOMS.Dormitory = {
 	Name="Dormitory", FloorMat="SmoothPlastic", FloorCol=C.FloorTile,
 	CeilCol=C.CeilingPanel,
-	Fixtures={fix("DimBulb",-8,11,-8), fix("DimBulb",8,11,8)},
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
 		-- Cots spaced around the room
 		fix("Cot",13.9,0,6,90), fix("Cot",-6.5,0,6.5,90),

@@ -23,7 +23,7 @@ RoomTemplates.MedBay = {
 	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.WallPaint,
 	CeilingColor = Config.Colors.CeilingPanel,
 	Doors = { door("NegZ", 0) },
-	Fixtures = { fixture("FluorescentLight", -4, 11.5, 0), fixture("FluorescentLight", 4, 11.5, 0) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
 		fixture("HospitalBed", -4, 0, -4, 90), fixture("HospitalBed", -4, 0, 4, 90),
 		fixture("MedCabinet", 5, 0, -5, 0),
@@ -39,7 +39,7 @@ RoomTemplates.BreakRoom = {
 	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.WallPaint,
 	CeilingColor = Config.Colors.CeilingPanel,
 	Doors = { door("NegZ", 0) },
-	Fixtures = { fixture("FluorescentLight", 0, 11.5, 0), fixture("FluorescentLight", 0, 11.5, -7) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
 		fixture("VendingMachine", -5, 0, -5, 0),
 		fixture("BreakTable", 0, 0, 0, 0),
@@ -57,7 +57,7 @@ RoomTemplates.ArchiveRoom = {
 	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.DarkConcrete,
 	CeilingColor = Config.Colors.DarkConcrete,
 	Doors = { door("NegZ", 0) },
-	Fixtures = { fixture("DimBulb", -5, 11, 0), fixture("DimBulb", 5, 11, 0) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
 		fixture("FilingCabinet", -5, 0, -5, 0), fixture("FilingCabinet", -2, 0, -5, 0),
 		fixture("FilingCabinet", 2, 0, -5, 0), fixture("FilingCabinet", 5, 0, -5, 0),
@@ -74,7 +74,7 @@ RoomTemplates.SecurityStation = {
 	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.WallPaint,
 	CeilingColor = Config.Colors.CeilingPanel,
 	Doors = { door("NegZ", 0) },
-	Fixtures = { fixture("FluorescentLight", 0, 11.5, 0) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
 		fixture("Console", -3, 0, -5, 0), fixture("Console", 3, 0, -5, 0),
 		fixture("Chair", -3, 0, -3, 0), fixture("Chair", 3, 0, -3, 0),
@@ -92,8 +92,8 @@ RoomTemplates.MechanicalRoom = {
 	CeilingColor = Config.Colors.DarkConcrete,
 	Doors = { door("NegZ", 0) },
 	Fixtures = {
-		fixture("DimBulb", 0, 11, 0), fixture("Pipe", -4, 11, 0),
-		fixture("Pipe", 4, 11, 0), fixture("Pipe", 0, 11, -5), fixture("Pipe", 0, 11, 5),
+		fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4),
+		fixture("Pipe", -4, 11, 0), fixture("Pipe", 4, 11, 0), fixture("Pipe", 0, 11, -5), fixture("Pipe", 0, 11, 5),
 	},
 	Furniture = {
 		fixture("Generator", -4, 0, -4, 0),
@@ -111,7 +111,7 @@ RoomTemplates.Dormitory = {
 	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.WallPaint,
 	CeilingColor = Config.Colors.CeilingPanel,
 	Doors = { door("NegZ", 0) },
-	Fixtures = { fixture("DimBulb", -4, 11, -4), fixture("DimBulb", 4, 11, 4) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
 		fixture("Cot", -4, 0, -4, 90), fixture("Cot", -4, 0, 4, 90),
 		fixture("Cot", 4, 0, -4, -90), fixture("Cot", 4, 0, 4, -90),
