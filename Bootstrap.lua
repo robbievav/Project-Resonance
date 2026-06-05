@@ -365,11 +365,11 @@ local function cloneFurniture(typeName, pos, rot, parent)
 	local finalPos
 	if clone:IsA("Model") and clone.PrimaryPart then
 		finalPos = Vector3.new(pos.X, pos.Y + clone.PrimaryPart.Size.Y / 2, pos.Z)
-		clone:SetPrimaryPartCFrame(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
+		clone:PivotTo(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
 	elseif clone:IsA("Model") then
 		local cf, size = clone:GetBoundingBox()
 		finalPos = Vector3.new(pos.X, pos.Y + size.Y / 2, pos.Z)
-		clone:SetPrimaryPartCFrame(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
+		clone:PivotTo(CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0))
 	elseif clone:IsA("BasePart") then
 		finalPos = Vector3.new(pos.X, pos.Y + clone.Size.Y / 2, pos.Z)
 		clone.CFrame = CFrame.new(finalPos) * CFrame.Angles(0, math.rad(finalRot), 0)
