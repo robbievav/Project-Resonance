@@ -536,7 +536,6 @@ local function connectTrackerShop(pad)
 
 		local ServerStorage = game:GetService("ServerStorage")
 		local trackerTemplate = ServerStorage:FindFirstChild("DecibelTracker")
-		local keyTrackerTemplate = getOrCreateKeyTrackerTemplate()
 
 		local backpack = player:FindFirstChild("Backpack")
 		if backpack then
@@ -556,7 +555,29 @@ local function connectTrackerShop(pad)
 				humanoid:EquipTool(clone)
 				print("[MapGenerator] DecibelTracker given via Touched to", player.Name)
 			end
+		end
+	end)
+end
 
+local function connectKeyTrackerShop(pad)
+	-- Remove the ProximityPrompt if it exists
+	local prompt = pad:FindFirstChildOfClass("ProximityPrompt")
+	if prompt then
+		prompt:Destroy()
+	end
+
+	pad.Touched:Connect(function(otherPart)
+		local char = otherPart.Parent
+		if not char then return end
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if not humanoid or humanoid.Health <= 0 then return end
+		local player = Players:GetPlayerFromCharacter(char)
+		if not player then return end
+
+		local keyTrackerTemplate = getOrCreateKeyTrackerTemplate()
+
+		local backpack = player:FindFirstChild("Backpack")
+		if backpack then
 			-- Give Key Tracker
 			if keyTrackerTemplate and not (backpack:FindFirstChild("KeyTracker") or char:FindFirstChild("KeyTracker")) then
 				local clone = keyTrackerTemplate:Clone()
@@ -570,6 +591,7 @@ local function connectTrackerShop(pad)
 					weld.Parent = handle
 				end
 				clone.Parent = backpack
+				humanoid:EquipTool(clone)
 				print("[MapGenerator] KeyTracker given via Touched to", player.Name)
 			end
 		end
@@ -580,6 +602,11 @@ for _, pad in ipairs(CollectionService:GetTagged("TrackerShopPad")) do
 	connectTrackerShop(pad)
 end
 CollectionService:GetInstanceAddedSignal("TrackerShopPad"):Connect(connectTrackerShop)
+
+for _, pad in ipairs(CollectionService:GetTagged("KeyTrackerShopPad")) do
+	connectKeyTrackerShop(pad)
+end
+CollectionService:GetInstanceAddedSignal("KeyTrackerShopPad"):Connect(connectKeyTrackerShop)
 
 ---------------------------------------------------------------------------
 -- MULTIPLAYER CO-OP QUEUE DETECTOR

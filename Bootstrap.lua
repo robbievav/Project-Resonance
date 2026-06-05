@@ -1056,10 +1056,13 @@ local function buildLobby(mapFolder)
 
 		if name == "TrackerShopPad" then
 			game:GetService("CollectionService"):AddTag(pad, "TrackerShopPad")
+		elseif name == "KeyTrackerShopPad" then
+			game:GetService("CollectionService"):AddTag(pad, "KeyTrackerShopPad")
 		end
 	end
 
 	makeShopPad("TrackerShopPad", -30, 20, Color3.fromRGB(50, 200, 80), "DECIBEL SENSOR\n[ACTIVE OUTLINES]\n[COST: FREE]")
+	makeShopPad("KeyTrackerShopPad", -30, -20, Color3.fromRGB(240, 180, 40), "KEY TRACKER\n[FIND THE KEY]\n[COST: FREE]")
 	makeShopPad("CosmeticsShopPad", 30, 20, Color3.fromRGB(160, 50, 220), "COSMETIC TRAILS\n[COMING SOON]")
 
 	-- CRT Stats Terminal Console
