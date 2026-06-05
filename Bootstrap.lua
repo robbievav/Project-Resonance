@@ -548,8 +548,6 @@ local function generateFloor(floorIdx, rng, mapFolder)
 			local tName
 			if row == math.ceil(GRID_SIZE/2) and col == math.ceil(GRID_SIZE/2) then
 				tName = "Elevator"
-			elseif row == STAIRWELL_ROW and col == STAIRWELL_COL then
-				tName = "Stairwell"
 			else
 				tName = getWeightedRandom(rng)
 			end
@@ -572,11 +570,7 @@ local function generateFloor(floorIdx, rng, mapFolder)
 					West = cellData[row][col - 1] ~= nil,
 					East = cellData[row][col + 1] ~= nil,
 				}
-				if cell.name == "Stairwell" then
-					buildStairwell(cell.origin, floorIdx, ff, connections)
-				else
-					buildRoom(cell.template, cell.origin, ff, floorIdx, connections)
-				end
+				buildRoom(cell.template, cell.origin, ff, floorIdx, connections)
 			end
 		end
 	end

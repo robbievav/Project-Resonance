@@ -402,6 +402,8 @@ local function aiTick()
 	local humanoid = entity:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
 
+	if currentState == State.FLOOR_TRANSITION then return end
+
 	-- Update AI's current floor
 	currentFloor = getAIFloor()
 	entity:SetAttribute("CurrentFloor", currentFloor)
@@ -466,11 +468,9 @@ local function aiTick()
 		end
 		moveToward(targetPosition)
 
-		-- Floor transition: periodically move to stairwell and change floors
+		-- Floor transition: periodically change floors to follow player
 		if tick() - lastFloorTransition > floorTransitionCooldown then
-			-- Decide whether to change floors (30% chance per check)
 			if math.random() < 0.3 then
-				-- Try to follow the closest player's floor
 				local targetFloor = currentFloor
 				for _, plr in ipairs(Players:GetPlayers()) do
 					local pFloor = plr:GetAttribute("CurrentFloor") or 1
@@ -481,12 +481,44 @@ local function aiTick()
 				end
 
 				if targetFloor ~= currentFloor then
-					local stairPos = findStairwell()
-					if stairPos then
-						currentState = State.FLOOR_TRANSITION
-						targetPosition = stairPos
-						moveToward(stairPos)
-					end
+					currentState = State.FLOOR_TRANSITION
+					lastFloorTransition = tick()
+					task.spawn(function()
+						if not entity or not entity.PrimaryPart then return end
+						
+						-- Fade out parts
+						for _, p in ipairs(entity:GetDescendants()) do
+							if p:IsA("BasePart") then
+								TweenService:Create(p, TweenInfo.new(1.0), {Transparency = 1}):Play()
+							end
+						end
+						
+						task.wait(1.0)
+						if not entity or not entity.PrimaryPart then return end
+						
+						-- Teleport to new floor
+						currentFloor = targetFloor
+						local spawnPos = getRandomPatrolTarget()
+						entity:SetPrimaryPartCFrame(CFrame.new(spawnPos))
+						entity:SetAttribute("CurrentFloor", currentFloor)
+						
+						task.wait(0.5)
+						if not entity or not entity.PrimaryPart then return end
+						
+						-- Fade in parts
+						for _, p in ipairs(entity:GetDescendants()) do
+							if p:IsA("BasePart") then
+								local targetTrans = (p.Name == "Eye" and 0) or (p.Name == "HumanoidRootPart" and 0) or 0
+								TweenService:Create(p, TweenInfo.new(1.0), {Transparency = targetTrans}):Play()
+							end
+						end
+						
+						task.wait(1.0)
+						if currentState == State.FLOOR_TRANSITION then
+							currentState = State.PATROL
+							humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed)
+						end
+					end)
 				end
 			end
 			lastFloorTransition = tick()
@@ -545,44 +577,6 @@ local function aiTick()
 			end
 		end)
 
-	elseif currentState == State.FLOOR_TRANSITION then
-		-- Move toward the stairwell
-		if targetPosition then
-			moveToward(targetPosition)
-			-- Check if we've reached the stairwell
-			if (entity.PrimaryPart.Position - targetPosition).Magnitude < 8 then
-				-- Teleport to the stairwell on the adjacent floor
-				local nextFloor
-				-- Try to move toward the nearest player
-				local targetFloor = currentFloor
-				for _, plr in ipairs(Players:GetPlayers()) do
-					local pFloor = plr:GetAttribute("CurrentFloor") or 1
-					if pFloor > currentFloor then
-						targetFloor = currentFloor + 1
-						break
-					elseif pFloor < currentFloor then
-						targetFloor = currentFloor - 1
-						break
-					end
-				end
-				nextFloor = math.clamp(targetFloor, 1, Config.Map.FloorsToGenerate)
-
-				if nextFloor ~= currentFloor then
-					local newBaseY = -(nextFloor - 1) * Config.Map.FloorSeparation
-					entity:SetPrimaryPartCFrame(CFrame.new(
-						entity.PrimaryPart.Position.X,
-						newBaseY + 4,
-						entity.PrimaryPart.Position.Z
-					))
-					currentFloor = nextFloor
-					print("[DecibelAI] Transitioned to floor", currentFloor, "| Difficulty:", string.format("%.1fx", getDifficultyMult()))
-				end
-
-				currentState = State.PATROL
-				humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed)
-				lastFloorTransition = tick()
-			end
-		end
 	end
 end
 
