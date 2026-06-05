@@ -321,6 +321,45 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 ---------------------------------------------------------------------------
+-- DECIBEL SENSOR SHOP pad
+---------------------------------------------------------------------------
+local function connectTrackerShop(pad)
+	local prompt = pad:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then
+		prompt = Instance.new("ProximityPrompt")
+		prompt.ActionText = "Equip Sensor"
+		prompt.ObjectText = "Decibel Radar"
+		prompt.MaxActivationDistance = 10
+		prompt.HoldDuration = 0
+		prompt.Parent = pad
+	end
+
+	prompt.Triggered:Connect(function(player)
+		local ServerStorage = game:GetService("ServerStorage")
+		local trackerTemplate = ServerStorage:FindFirstChild("DecibelTracker")
+		if not trackerTemplate then
+			warn("[MapGenerator] DecibelTracker tool template not found in ServerStorage!")
+			return
+		end
+
+		local backpack = player:FindFirstChild("Backpack")
+		if backpack then
+			if backpack:FindFirstChild("DecibelTracker") or (player.Character and player.Character:FindFirstChild("DecibelTracker")) then
+				return
+			end
+			local clone = trackerTemplate:Clone()
+			clone.Parent = backpack
+			print("[MapGenerator] DecibelTracker given to", player.Name)
+		end
+	end)
+end
+
+for _, pad in ipairs(CollectionService:GetTagged("TrackerShopPad")) do
+	connectTrackerShop(pad)
+end
+CollectionService:GetInstanceAddedSignal("TrackerShopPad"):Connect(connectTrackerShop)
+
+---------------------------------------------------------------------------
 -- MULTIPLAYER CO-OP QUEUE DETECTOR
 ---------------------------------------------------------------------------
 task.spawn(function()

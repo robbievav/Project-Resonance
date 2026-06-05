@@ -762,7 +762,7 @@ local function buildLobby(mapFolder)
 	lobbyFolder.Parent = mapFolder
 
 	local lobbyHeight = 100
-	local sz = 60
+	local sz = 120
 	local wallH = 20
 	local thick = 1
 
@@ -820,9 +820,9 @@ local function buildLobby(mapFolder)
 		Parent = lobbyFolder
 	})
 
-	-- Ceiling lights
-	for _, x in ipairs({-15, 15}) do
-		for _, z in ipairs({-15, 15}) do
+	-- Ceiling lights (16 lights distributed over the 120x120 space)
+	for _, x in ipairs({-40, -15, 15, 40}) do
+		for _, z in ipairs({-40, -15, 15, 40}) do
 			local lh = mp({
 				Name = "LobbyCeilingLight",
 				Size = Vector3.new(4, 0.3, 1),
@@ -1050,12 +1050,16 @@ local function buildLobby(mapFolder)
 		lbl.TextColor3 = col
 		lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 		lbl.TextStrokeTransparency = 0
-		lbl.Text = labelText .. "\n[SHOP COMING SOON]"
+		lbl.Text = labelText
 		lbl.Parent = bb
+
+		if name == "TrackerShopPad" then
+			game:GetService("CollectionService"):AddTag(pad, "TrackerShopPad")
+		end
 	end
 
-	makeShopPad("FlashlightShopPad", -15, 15, Color3.fromRGB(220, 220, 50), "FLASHLIGHT UPGRADES")
-	makeShopPad("CosmeticsShopPad", 15, 15, Color3.fromRGB(160, 50, 220), "COSMETIC TRAILS")
+	makeShopPad("TrackerShopPad", -30, 20, Color3.fromRGB(50, 200, 80), "DECIBEL SENSOR\n[ACTIVE OUTLINES]\n[COST: FREE]")
+	makeShopPad("CosmeticsShopPad", 30, 20, Color3.fromRGB(160, 50, 220), "COSMETIC TRAILS\n[COMING SOON]")
 
 	-- CRT Stats Terminal Console
 	local consoleFolder = Instance.new("Folder")
@@ -1116,16 +1120,17 @@ local function buildLobby(mapFolder)
 	obbyFolder.Parent = lobbyFolder
 
 	local obbySteps = {
-		{ Pos = Vector3.new(-28, 102, -20), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(-28, 104.5, -12), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
-		{ Pos = Vector3.new(-28, 107, -4), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(-28, 109.5, 4), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(-25, 112, 12), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
-		{ Pos = Vector3.new(-18, 114, 20), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(-10, 116, 26), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(0, 117.5, 27), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(10, 118, 27), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
-		{ Pos = Vector3.new(20, 118.5, 26), Size = Vector3.new(5, 0.8, 5), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(50, 52, 55), IsTrophyPlatform = true },
+		{ Pos = Vector3.new(-sz/2 + 2, 102, -40), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 2, 104.5, -30), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
+		{ Pos = Vector3.new(-sz/2 + 2, 107, -20), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 2, 109.5, -10), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 5, 112, 0), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
+		
+		{ Pos = Vector3.new(-sz/2 + 12, 114, sz/2 - 10), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 25, 116, sz/2 - 4), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 38, 117.5, sz/2 - 3), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 50, 118, sz/2 - 3), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-sz/2 + 62, 118.5, sz/2 - 4), Size = Vector3.new(5, 0.8, 5), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(50, 52, 55), IsTrophyPlatform = true },
 	}
 
 	for _, step in ipairs(obbySteps) do
@@ -1201,6 +1206,136 @@ local function buildLobby(mapFolder)
 			lbl.Parent = bb
 		end
 	end
+
+	-- Build Decibel Tracker Tool inside ServerStorage
+	local ServerStorage = game:GetService("ServerStorage")
+	local oldTool = ServerStorage:FindFirstChild("DecibelTracker")
+	if oldTool then oldTool:Destroy() end
+
+	local tool = Instance.new("Tool")
+	tool.Name = "DecibelTracker"
+	tool.RequiresHandle = true
+
+	local handle = mp({
+		Name = "Handle",
+		Size = Vector3.new(1.2, 0.8, 0.4),
+		CFrame = CFrame.new(0, 0, 0),
+		Material = Enum.Material.Metal,
+		Color = Color3.fromRGB(40, 42, 45),
+		Parent = tool
+	})
+
+	local screen = mp({
+		Name = "Screen",
+		Size = Vector3.new(0.8, 0.6, 0.05),
+		CFrame = CFrame.new(0, 0.2, -0.21),
+		Material = Enum.Material.Glass,
+		Color = Color3.fromRGB(10, 30, 10),
+		Parent = tool
+	})
+
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = handle
+	weld.Part1 = screen
+	weld.Parent = handle
+
+	-- Create LocalScript inside the tool to run radar outlines client-side
+	local clientScript = Instance.new("LocalScript")
+	clientScript.Name = "RadarScript"
+	clientScript.Source = [[
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local tool = script.Parent
+local player = Players.LocalPlayer
+local highlight = nil
+local beepSound = nil
+local lastBeep = 0
+
+local function clearHighlight()
+	if highlight then
+		highlight:Destroy()
+		highlight = nil
+	end
+	if beepSound then
+		beepSound:Destroy()
+		beepSound = nil
+	end
+end
+
+tool.Equipped:Connect(function()
+	clearHighlight()
+
+	beepSound = Instance.new("Sound")
+	beepSound.SoundId = "rbxassetid://9114234894"
+	beepSound.Volume = 0.5
+	beepSound.Parent = tool.Handle
+	beepSound:Play()
+
+	local connection
+	connection = RunService.Heartbeat:Connect(function()
+		if not tool.Parent or tool.Parent ~= player.Character then
+			connection:Disconnect()
+			clearHighlight()
+			return
+		end
+
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			local nearestDecibel = nil
+			local nearestDist = math.huge
+			
+			for _, child in ipairs(workspace:GetChildren()) do
+				if child.Name:find("TheDecibel") and child:IsA("Model") then
+					local decibelRoot = child:FindFirstChild("HumanoidRootPart")
+					if decibelRoot then
+						local dist = (decibelRoot.Position - root.Position).Magnitude
+						if dist < nearestDist then
+							nearestDecibel = child
+							nearestDist = dist
+						end
+					end
+				end
+			end
+			
+			if nearestDecibel then
+				if not highlight or highlight.Parent ~= nearestDecibel then
+					if highlight then highlight:Destroy() end
+					highlight = Instance.new("Highlight")
+					highlight.Name = "TrackerHighlight"
+					highlight.FillColor = Color3.fromRGB(255, 50, 50)
+					highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+					highlight.FillTransparency = 0.4
+					highlight.OutlineTransparency = 0
+					highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+					highlight.Parent = nearestDecibel
+				end
+				
+				local interval = math.clamp(nearestDist / 100, 0.25, 2.5)
+				if tick() - lastBeep > interval then
+					lastBeep = tick()
+					local beep = Instance.new("Sound")
+					beep.SoundId = "rbxassetid://9114234894"
+					beep.Volume = math.clamp(1.5 - nearestDist/120, 0.1, 0.8)
+					beep.Parent = tool.Handle
+					beep:Play()
+					game:GetService("Debris"):AddItem(beep, 1)
+				end
+			else
+				if highlight then
+					highlight:Destroy()
+					highlight = nil
+				end
+			end
+		end
+	end)
+end)
+
+tool.Unequipped:Connect(clearHighlight)
+]]
+	clientScript.Parent = tool
+	tool.Parent = ServerStorage
 end
 
 buildLobby(mapFolder)
