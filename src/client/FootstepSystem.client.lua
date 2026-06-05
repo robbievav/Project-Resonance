@@ -93,9 +93,6 @@ local function onCharacterAdded(character)
 
 		if not isMoving then return end
 
-		-- Suppress footsteps while hiding
-		if character:GetAttribute("IsHiding") then return end
-
 		-- Step interval depends on speed
 		local stepInterval
 		if isCrouching then

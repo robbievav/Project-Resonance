@@ -12,6 +12,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local player = Players.LocalPlayer
+local GameEvents = ReplicatedStorage:WaitForChild("GameEvents", 30)
+local AIAlertEvent = GameEvents and GameEvents:WaitForChild("AIAlert")
+
+local lastEchoAlertTime = 0
+
+if AIAlertEvent then
+	AIAlertEvent.OnClientEvent:Connect(function(data)
+		if data and data.Type == "Echolocation" then
+			lastEchoAlertTime = tick()
+		end
+	end)
+end
 
 ---------------------------------------------------------------------------
 -- VHS SCANLINE OVERLAY
@@ -135,6 +147,13 @@ RunService.RenderStepped:Connect(function(dt)
 			local intensity = 1 - (dist / 60)
 			baseNoiseAlpha = baseNoiseAlpha + (intensity * 0.5)
 		end
+	end
+
+	-- Apply echolocation static surge visual effect (decays over 1.5s)
+	local timeSinceEcho = tick() - lastEchoAlertTime
+	if timeSinceEcho < 1.5 then
+		local echoIntensity = (1 - (timeSinceEcho / 1.5)) * 0.70
+		baseNoiseAlpha = baseNoiseAlpha + echoIntensity
 	end
 
 	-- Apply subtle flicker to whatever our calculated alpha is

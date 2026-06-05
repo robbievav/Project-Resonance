@@ -48,8 +48,6 @@ makeEvent("SoundEvent")
 makeEvent("DoorEvent")
 makeEvent("HealthUpdate")
 makeEvent("AIAlert")
-makeEvent("HideEvent")
-makeEvent("BreathingFail")
 makeEvent("KeyCollected")
 makeEvent("ElevatorUsed")
 
@@ -126,6 +124,8 @@ local function teleportToFloor(player, targetFloor)
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then elevatorCooldown[player] = nil; return end
 
+	local currentFloor = player:GetAttribute("CurrentFloor") or 1
+
 	-- Fire client to show the elevator fade effect
 	local elevUsed = events:FindFirstChild("ElevatorUsed")
 	if elevUsed then elevUsed:FireClient(player, "FadeOut") end
@@ -161,6 +161,57 @@ local function teleportToFloor(player, targetFloor)
 	print("[MapGenerator]", player.Name, "moved to floor", targetFloor)
 end
 
+local function teleportToLobby(player, isVictory)
+	if elevatorCooldown[player] then return end
+	elevatorCooldown[player] = true
+
+	local char = player.Character
+	if not char then elevatorCooldown[player] = nil; return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then elevatorCooldown[player] = nil; return end
+
+	local currentFloor = player:GetAttribute("CurrentFloor") or 1
+
+	-- Fire client to show transition / victory screen
+	local elevUsed = events:FindFirstChild("ElevatorUsed")
+	if elevUsed then
+		if isVictory then
+			elevUsed:FireClient(player, "Victory")
+		else
+			elevUsed:FireClient(player, "FadeOut")
+		end
+	end
+
+	task.wait(1.5)  -- wait for client transition screen
+
+	-- Find Lobby SpawnLocation in GeneratedMap
+	local lobbyFolder = mapFolder:FindFirstChild("Lobby")
+	local spawnLoc = lobbyFolder and lobbyFolder:FindFirstChild("LobbySpawn")
+
+	if spawnLoc then
+		root.CFrame = spawnLoc.CFrame + Vector3.new(0, 3, 0)
+	else
+		root.CFrame = CFrame.new(0, 103, 0)
+		warn("[MapGenerator] LobbySpawn not found during teleport to lobby!")
+	end
+
+	-- Clear keys and single player status
+	player:SetAttribute("SinglePlayerActive", false)
+	player:SetAttribute("KeyFloor_" .. currentFloor, nil)
+
+	task.wait(0.3)
+
+	-- Fade back in
+	if elevUsed then elevUsed:FireClient(player, "FadeIn") end
+
+	-- Cooldown
+	task.delay(3, function()
+		elevatorCooldown[player] = nil
+	end)
+
+	print("[MapGenerator]", player.Name, "returned to lobby. Victory:", isVictory)
+end
+
 -- Wire up all ElevatorPanel ProximityPrompts via CollectionService tag
 local function connectElevatorPanel(panel)
 	local prompt = panel:FindFirstChildOfClass("ProximityPrompt")
@@ -180,7 +231,8 @@ local function connectElevatorPanel(panel)
 		end
 
 		if targetFloor > MC.FloorsToGenerate then
-			warn("[MapGenerator] No more floors to descend to.")
+			-- Escaped the facility (Victory!)
+			teleportToLobby(player, true)
 			return
 		end
 
@@ -188,17 +240,84 @@ local function connectElevatorPanel(panel)
 	end)
 end
 
+-- Wire up Single Player Start Panel
+local function connectSinglePlayerPanel(panel)
+	local prompt = panel:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then return end
+
+	prompt.Triggered:Connect(function(player)
+		if player:GetAttribute("SinglePlayerActive") then return end
+		player:SetAttribute("SinglePlayerActive", true)
+		teleportToFloor(player, 1)
+	end)
+end
+
 -- Connect existing panels
 for _, panel in ipairs(CollectionService:GetTagged("ElevatorPanel")) do
 	connectElevatorPanel(panel)
 end
+for _, panel in ipairs(CollectionService:GetTagged("SinglePlayerStartPanel")) do
+	connectSinglePlayerPanel(panel)
+end
 
 -- Connect future panels (if map regenerated at runtime)
 CollectionService:GetInstanceAddedSignal("ElevatorPanel"):Connect(connectElevatorPanel)
+CollectionService:GetInstanceAddedSignal("SinglePlayerStartPanel"):Connect(connectSinglePlayerPanel)
+
+-- Handle player joining and respawning: ensure SinglePlayerActive = false
+local function setupPlayer(player)
+	player:SetAttribute("SinglePlayerActive", false)
+	player.CharacterAdded:Connect(function(char)
+		player:SetAttribute("SinglePlayerActive", false)
+		for name, value in pairs(player:GetAttributes()) do
+			if name:find("KeyFloor_") then
+				player:SetAttribute(name, nil)
+			end
+		end
+	end)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+for _, player in ipairs(Players:GetPlayers()) do
+	setupPlayer(player)
+end
 
 -- Cleanup on leave
 Players.PlayerRemoving:Connect(function(player)
 	elevatorCooldown[player] = nil
 end)
 
-print("[MapGenerator] Elevator system active.")
+---------------------------------------------------------------------------
+-- RUNTIME CLEANUP OF HIDING SPOTS / PROMPTS (Fail-safe for leftover geometry)
+---------------------------------------------------------------------------
+local function cleanHidingElements(parent)
+	for _, desc in ipairs(parent:GetDescendants()) do
+		if desc:IsA("ProximityPrompt") and (desc.ActionText == "Hide" or desc.ObjectText:find("Hide")) then
+			desc:Destroy()
+		end
+		if desc:IsA("BasePart") and desc.Name == "HidingSpot" then
+			desc:Destroy()
+		end
+	end
+end
+
+task.spawn(function()
+	task.wait(1)
+	cleanHidingElements(workspace)
+
+	-- Destroy any prompts added dynamically (e.g. cloned from furniture models)
+	workspace.DescendantAdded:Connect(function(desc)
+		if desc:IsA("ProximityPrompt") and (desc.ActionText == "Hide" or desc.ObjectText:find("Hide")) then
+			task.defer(function()
+				if desc.Parent then desc:Destroy() end
+			end)
+		end
+		if desc:IsA("BasePart") and desc.Name == "HidingSpot" then
+			task.defer(function()
+				if desc.Parent then desc:Destroy() end
+			end)
+		end
+	end)
+end)
+
+print("[MapGenerator] Elevator system & dynamic cleanup active.")

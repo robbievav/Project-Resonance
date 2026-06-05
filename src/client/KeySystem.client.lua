@@ -106,6 +106,21 @@ noKeyLabel.TextTransparency    = 1
 noKeyLabel.ZIndex              = 101
 noKeyLabel.Parent              = fadeGui
 
+local victoryLabel = Instance.new("TextLabel")
+victoryLabel.Name              = "VictoryLabel"
+victoryLabel.Size              = UDim2.new(0.8, 0, 0.2, 0)
+victoryLabel.Position          = UDim2.new(0.1, 0, 0.4, 0)
+victoryLabel.BackgroundTransparency = 1
+victoryLabel.Font              = Enum.Font.GothamBold
+victoryLabel.TextSize          = 36
+victoryLabel.Text              = "FACILITY ESCAPED\nVICTORY"
+victoryLabel.TextColor3        = Color3.fromRGB(255, 215, 0)
+victoryLabel.TextStrokeColor3  = Color3.fromRGB(120, 90, 0)
+victoryLabel.TextStrokeTransparency = 0
+victoryLabel.TextTransparency  = 1
+victoryLabel.ZIndex            = 102
+victoryLabel.Parent            = fadeGui
+
 local function doFadeOut()
 	TweenService:Create(fadeFrame, TweenInfo.new(0.8), {BackgroundTransparency = 0}):Play()
 end
@@ -163,8 +178,42 @@ if ElevatorUsed then
 			doFadeIn()
 		elseif action == "NoKey" then
 			showNoKeyHint()
+		elseif action == "Victory" then
+			doFadeOut()
+			task.wait(0.8)
+			local textFadeIn = TweenService:Create(victoryLabel, TweenInfo.new(1.0), {TextTransparency = 0})
+			textFadeIn:Play()
+			textFadeIn.Completed:Wait()
+			task.wait(4.0)
+			local textFadeOut = TweenService:Create(victoryLabel, TweenInfo.new(1.0), {TextTransparency = 1})
+			textFadeOut:Play()
+			textFadeOut.Completed:Wait()
 		end
 	end)
 end
+
+---------------------------------------------------------------------------
+-- LOBBY TROPHY INTERACTION
+---------------------------------------------------------------------------
+local CollectionService = game:GetService("CollectionService")
+
+local function connectTrophy(trophyPart)
+	local prompt = trophyPart:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then return end
+	prompt.Triggered:Connect(function()
+		keyIcon.Text = "🏆"
+		keyLabel.Text = "Prototype Trophy inspected! Obby Completed!"
+		showKeyNotification()
+		task.delay(4, function()
+			keyIcon.Text = "🗝"
+			keyLabel.Text = "Research Key acquired — elevator unlocked"
+		end)
+	end)
+end
+
+for _, part in ipairs(CollectionService:GetTagged("LobbyTrophy")) do
+	connectTrophy(part)
+end
+CollectionService:GetInstanceAddedSignal("LobbyTrophy"):Connect(connectTrophy)
 
 print("[KeySystem] Client key system ready.")

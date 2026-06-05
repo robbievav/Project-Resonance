@@ -107,6 +107,7 @@ local investigateTarget = nil
 local currentFloor = 1
 local lastFloorTransition = 0
 local floorTransitionCooldown = AC.FloorTransitionDelay
+local lastEchoTime = 0
 
 ---------------------------------------------------------------------------
 -- DIFFICULTY SCALING
@@ -198,6 +199,9 @@ local function moveToward(pos)
 		AgentHeight = 5,
 		AgentCanJump = false,
 		WaypointSpacing = 4,
+		Costs = {
+			Door = 1.0
+		}
 	})
 
 	local success, errorMessage = pcall(function()
@@ -266,16 +270,12 @@ local function getNearestPlayer()
 	for _, plr in ipairs(Players:GetPlayers()) do
 		local char = plr.Character
 		if char then
-			-- Skip players that are hiding (unless AI is very close and heard them)
-			local isHiding = char:GetAttribute("IsHiding")
-			if not isHiding then
-				local root = char:FindFirstChild("HumanoidRootPart")
-				if root then
-					local dist = (root.Position - entity.PrimaryPart.Position).Magnitude
-					if dist < nearestDist then
-						nearest = plr
-						nearestDist = dist
-					end
+			local root = char:FindFirstChild("HumanoidRootPart")
+			if root then
+				local dist = (root.Position - entity.PrimaryPart.Position).Magnitude
+				if dist < nearestDist then
+					nearest = plr
+					nearestDist = dist
 				end
 			end
 		end
@@ -300,29 +300,97 @@ local function tryBreakNearbyDoor()
 				task.spawn(function()
 					task.wait(AC.DoorBreakTime)
 					if desc and desc.Parent then
-						-- Violent open — fling the door
-						desc.CanCollide = false
-						local breakTween = TweenService:Create(desc, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
-							CFrame = desc.CFrame * CFrame.Angles(0, math.rad(110), 0),
-						})
-						breakTween:Play()
-
-						-- Emit loud sound
-						local emitEvent = ServerStorage:FindFirstChild("EmitSound")
-						if emitEvent then
-							emitEvent:Fire({
-								Position  = desc.Position,
-								Volume    = 0.9,
-								Type      = "DoorBreak",
-								Timestamp = tick(),
-								Player    = nil,
-							})
+						local breakDoor = game:GetService("ServerStorage"):FindFirstChild("BreakDoor")
+						if breakDoor then
+							breakDoor:Fire(desc, entity.PrimaryPart)
 						end
 					end
 				end)
 				return  -- only break one door at a time
 			end
 		end
+	end
+end
+
+local function tryOpenNearbyDoorNormally()
+	if not entity or not entity.PrimaryPart then return end
+	local pos = entity.PrimaryPart.Position
+	for _, desc in ipairs(mapFolder:GetDescendants()) do
+		if desc:IsA("BasePart") and desc.Name == "Door" and desc.CanCollide then
+			local dist = (desc.Position - pos).Magnitude
+			if dist < 8 then
+				local toggleDoor = game:GetService("ServerStorage"):FindFirstChild("ToggleDoor")
+				if toggleDoor then
+					toggleDoor:Fire(desc, true, entity.PrimaryPart)
+				end
+			end
+		end
+	end
+end
+
+local function getRoomGridCell(pos)
+	local spacing = Config.Map.RoomSpacing or 44
+	local halfGrid = (Config.Map.RoomGridSize - 1) / 2
+	local col = math.floor((pos.X + halfGrid * spacing + spacing/2) / spacing) + 1
+	local row = math.floor((pos.Z + halfGrid * spacing + spacing/2) / spacing) + 1
+	return row, col
+end
+
+local function performEcholocation(player)
+	local char = player.Character
+	if not char or not entity or not entity.PrimaryPart then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local torso = entity.PrimaryPart
+
+	-- Play sonar sound
+	local sonarSound = torso:FindFirstChild("SonarSound")
+	if not sonarSound then
+		sonarSound = Instance.new("Sound")
+		sonarSound.Name = "SonarSound"
+		sonarSound.SoundId = "rbxassetid://9114234894" -- placeholder
+		sonarSound.Volume = 1
+		sonarSound.RollOffMaxDistance = 120
+		sonarSound.Parent = torso
+	end
+	sonarSound:Play()
+
+	-- Expanding neon ping ring effect in workspace
+	task.spawn(function()
+		local ring = Instance.new("Part")
+		ring.Name = "EchoRing"
+		ring.Shape = Enum.PartType.Ball
+		ring.Material = Enum.Material.Neon
+		ring.Color = Color3.fromRGB(0, 150, 255)
+		ring.Transparency = 0.5
+		ring.Anchored = true
+		ring.CanCollide = false
+		ring.CFrame = torso.CFrame
+		ring.Size = Vector3.new(2, 2, 2)
+		ring.Parent = workspace
+
+		local info = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween = TweenService:Create(ring, info, {
+			Size = Vector3.new(72, 72, 72),
+			Transparency = 1,
+		})
+		tween:Play()
+		tween.Completed:Wait()
+		ring:Destroy()
+	end)
+
+	-- Direct AI focus to player's location
+	investigateTarget = root.Position
+	currentState = State.INVESTIGATE
+	lastSoundTime = tick()
+
+	-- Warn local client
+	if AIAlertEvent then
+		AIAlertEvent:FireClient(player, {
+			Type = "Echolocation",
+			Position = torso.Position,
+		})
 	end
 end
 
@@ -341,17 +409,40 @@ local function aiTick()
 	local loudest = getLoudestSound()
 	local nearestPlayer, nearestDist = getNearestPlayer()
 
-	-- State transitions based on sound
+	-- State transitions based on sound (with progressive difficulty scaling)
 	if loudest then
 		lastSoundTime = tick()
 		investigateTarget = loudest.Position
 
-		if loudest.Volume >= Config.SoundLevels.Run then
+		-- Progressive floor difficulty: Direct chase triggers on quieter noises at deeper levels
+		local chaseThreshold = math.max(0.1, Config.SoundLevels.Run - (currentFloor - 1) * 0.25)
+
+		if loudest.Volume >= chaseThreshold then
 			currentState = State.CHASE
 			humanoid.WalkSpeed = getScaledSpeed(AC.ChaseSpeed)
 		else
 			currentState = State.INVESTIGATE
 			humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed + 4)
+		end
+	end
+
+	-- Same-room Echolocation check
+	if nearestPlayer then
+		local playerFloor = nearestPlayer:GetAttribute("CurrentFloor") or 1
+		if playerFloor == currentFloor then
+			local playerChar = nearestPlayer.Character
+			local playerRoot = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+			if playerRoot then
+				local aRow, aCol = getRoomGridCell(entity.PrimaryPart.Position)
+				local pRow, pCol = getRoomGridCell(playerRoot.Position)
+
+				if aRow == pRow and aCol == pCol then
+					if tick() - lastEchoTime > (AC.EchoInterval or 4) then
+						lastEchoTime = tick()
+						performEcholocation(nearestPlayer)
+					end
+				end
+			end
 		end
 	end
 
@@ -365,6 +456,10 @@ local function aiTick()
 	end
 
 	-- Execute state behavior
+	if currentState ~= State.CHASE then
+		tryOpenNearbyDoorNormally()
+	end
+
 	if currentState == State.PATROL then
 		if not targetPosition or (entity.PrimaryPart.Position - targetPosition).Magnitude < 5 then
 			targetPosition = getRandomPatrolTarget()
@@ -495,28 +590,94 @@ end
 -- SPAWN AND MAIN LOOP
 ---------------------------------------------------------------------------
 local function start()
-	print("[DecibelAI] Waiting", AC.SpawnDelay, "seconds before spawning...")
-	task.wait(AC.SpawnDelay)
+	while true do
+		task.wait(1)
 
-	entity = createEntityModel()
+		-- Find if there is any active single-player player
+		local activePlayer = nil
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr:GetAttribute("SinglePlayerActive") == true then
+				activePlayer = plr
+				break
+			end
+		end
 
-	-- Spawn on the same floor as the first player
-	local firstPlayer = Players:GetPlayers()[1]
-	if firstPlayer then
-		currentFloor = firstPlayer:GetAttribute("CurrentFloor") or 1
-	end
+		if activePlayer then
+			if not entity then
+				-- Player entered single player mode and AI is not spawned yet!
+				print("[DecibelAI] Active player found in single-player mode. Starting spawn delay...")
+				
+				-- Spawn delay countdown
+				local startTime = tick()
+				local delayAborted = false
+				while tick() - startTime < AC.SpawnDelay do
+					task.wait(0.5)
+					-- Check if the player is still active
+					local stillActive = false
+					for _, plr in ipairs(Players:GetPlayers()) do
+						if plr:GetAttribute("SinglePlayerActive") == true then
+							stillActive = true
+							break
+						end
+					end
+					if not stillActive then
+						delayAborted = true
+						break
+					end
+				end
 
-	local spawnPos = getRandomPatrolTarget()
-	entity:SetPrimaryPartCFrame(CFrame.new(spawnPos))
-	entity.Parent = workspace
+				if not delayAborted then
+					-- Spawning the AI!
+					entity = createEntityModel()
 
-	currentState = State.PATROL
-	lastFloorTransition = tick()
-	print("[DecibelAI] The Decibel has spawned on floor", currentFloor, "| Difficulty:", string.format("%.1fx", getDifficultyMult()))
+					-- Set initial floor from the active player's floor
+					currentFloor = activePlayer:GetAttribute("CurrentFloor") or 1
+					entity:SetAttribute("CurrentFloor", currentFloor)
 
-	while entity and entity.Parent do
-		aiTick()
-		task.wait(0.3)
+					local spawnPos = getRandomPatrolTarget()
+					entity:SetPrimaryPartCFrame(CFrame.new(spawnPos))
+					entity.Parent = workspace
+
+					currentState = State.PATROL
+					lastFloorTransition = tick()
+					print("[DecibelAI] The Decibel has spawned on floor", currentFloor, "| Difficulty:", string.format("%.1fx", getDifficultyMult()))
+
+					-- Run AI tick loop as long as there is an active single-player player
+					while entity and entity.Parent do
+						-- Check if we still have any active player
+						local hasActive = false
+						for _, plr in ipairs(Players:GetPlayers()) do
+							if plr:GetAttribute("SinglePlayerActive") == true then
+								hasActive = true
+								break
+							end
+						end
+
+						if not hasActive then
+							-- No active players left (victory or death), despawn AI!
+							print("[DecibelAI] No active single-player players left. Despawning...")
+							entity:Destroy()
+							entity = nil
+							currentState = State.IDLE
+							break
+						end
+
+						aiTick()
+						task.wait(0.3)
+					end
+				else
+					print("[DecibelAI] Spawn delay aborted (player left single-player mode).")
+				end
+			end
+		else
+			-- No active player and AI is somehow still active, clean it up just in case
+			if entity then
+				print("[DecibelAI] Fail-safe: Despawning entity because no active players exist.")
+				entity:Destroy()
+				entity = nil
+				currentState = State.IDLE
+			end
+		end
 	end
 end
 

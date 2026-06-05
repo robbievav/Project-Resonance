@@ -78,7 +78,7 @@ local function spawnKeyOnFloor(floorIndex)
 	-- Collect candidate rooms (not Elevator or Stairwell)
 	local candidates = {}
 	for _, roomFolder in ipairs(floorFolder:GetChildren()) do
-		local rtype = roomFolder:GetAttribute("RoomType") or ""
+		local rtype = roomFolder:GetAttribute("RoomType") or roomFolder.Name
 		if rtype ~= "Elevator" and rtype ~= "Stairwell" and roomFolder:IsA("Folder") then
 			-- Find a floor part to place the key on
 			for _, part in ipairs(roomFolder:GetDescendants()) do

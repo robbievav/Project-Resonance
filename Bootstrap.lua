@@ -123,12 +123,7 @@ ROOMS.MedBay = {
 		fix("MedCabinet",5,0,-5,0),
 		fix("Desk",3.5,0,1.5,90),
 	},
-	HidingSpots={
-		-- Under bed 1 (at -7.5, 0, 10)
-		{Type="UnderBed",Off=Vector3.new(-7.5,0,10),Rot=90},
-		-- Under bed 2 (at -15.5, 0, -12.2)
-		{Type="UnderBed",Off=Vector3.new(-15.5,0,-12.2),Rot=-90},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -149,10 +144,7 @@ ROOMS.BreakRoom = {
 		-- Trash can beside vending machine
 		fix("TrashCan",-5,0,-3,0),
 	},
-	HidingSpots={
-		-- Under the break table (table is at 0,0,0 — offset slightly so key won't spawn there)
-		{Type="UnderTable",Off=Vector3.new(0,0,1.5),Rot=0},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -171,10 +163,7 @@ ROOMS.ArchiveRoom = {
 		-- Crate in front-right corner
 		fix("Crate",4,0,5,0),
 	},
-	HidingSpots={
-		-- Between the two left filing cabinet pairs (at Z=-5)
-		{Type="CabinetRow",Off=Vector3.new(-3.5,0,-5),Rot=0},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -194,9 +183,7 @@ ROOMS.SecurityStation = {
 		-- Locker in front-right corner
 		fix("Locker",5,0,5,180),
 	},
-	HidingSpots={
-		{Type="Locker",Off=Vector3.new(5,0,5),Rot=180},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -220,10 +207,7 @@ ROOMS.MechanicalRoom = {
 		-- Toolbox
 		fix("ToolBox",3,0,5,0),
 	},
-	HidingSpots={
-		-- Behind the generator (generator is at -4, 0, -4)
-		{Type="BehindGenerator",Off=Vector3.new(-4,0,-2),Rot=0},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -240,12 +224,7 @@ ROOMS.Dormitory = {
 		-- Footlockers at the foot of each bed row
 		fix("Footlocker",-2,0,-4,0), fix("Footlocker",-2,0,4,0),
 	},
-	HidingSpots={
-		-- Under cot 2 (at -6.5, 0, 6.5)
-		{Type="UnderBed",Off=Vector3.new(-6.5,0,6.5),Rot=90},
-		-- Under cot 3 (at -14.4, 0, -7.6)
-		{Type="UnderBed",Off=Vector3.new(-14.4,0,-7.6),Rot=-90},
-	},
+	HidingSpots={},
 }
 
 -----------------------------------------------------------------------
@@ -418,6 +397,7 @@ local function buildRoom(template, origin, floorFolder, floorIdx, connections)
 	local roomFolder = Instance.new("Folder")
 	roomFolder.Name = template.Name
 	roomFolder.Parent = floorFolder
+	roomFolder:SetAttribute("RoomType", template.Name)
 
 	-- Floor
 	mp({Name="Floor",Size=Vector3.new(sx,thick,sz),CFrame=CFrame.new(origin+Vector3.new(0,-thick/2,0)),Material=getMat(template.FloorMat),Color=template.FloorCol,Parent=roomFolder})
@@ -476,6 +456,7 @@ local function buildRoom(template, origin, floorFolder, floorIdx, connections)
 			end
 			local pp = Instance.new("ProximityPrompt"); pp.ActionText="Open"; pp.ObjectText="Door"; pp.MaxActivationDistance=8; pp.HoldDuration=0.3; pp.Parent=dp
 			local tg = Instance.new("StringValue"); tg.Name="DoorTag"; tg.Value=template.Name; tg.Parent=dp
+			local pm = Instance.new("PathfindingModifier"); pm.Label="Door"; pm.PassThrough=true; pm.Parent=dp
 		end
 	end
 
@@ -500,15 +481,6 @@ local function buildRoom(template, origin, floorFolder, floorIdx, connections)
 		cloneFurniture(f.Type, fPos, f.Rotation, roomFolder)
 	end
 
-	-- Hiding Spots
-	for _, spot in ipairs(template.HidingSpots) do
-		local spotPos = origin + spot.Off
-		local hp = mp({Name="HidingSpot",Size=Vector3.new(2,3,2),CFrame=CFrame.new(spotPos+Vector3.new(0,1.5,0))*CFrame.Angles(0,math.rad(spot.Rot),0),Color=Color3.fromRGB(0,0,0),CanCollide=false,Parent=roomFolder})
-		hp.Transparency = 1
-		local ht = Instance.new("StringValue"); ht.Name="HideType"; ht.Value=spot.Type; ht.Parent=hp
-		local fi = Instance.new("IntValue"); fi.Name="FloorIndex"; fi.Value=floorIdx; fi.Parent=hp
-		local pp = Instance.new("ProximityPrompt"); pp.ActionText="Hide"; pp.ObjectText=spot.Type; pp.MaxActivationDistance=6; pp.HoldDuration=0.8; pp.Parent=hp
-	end
 
 	return roomFolder
 end
@@ -638,27 +610,9 @@ local function generateFloor(floorIdx, rng, mapFolder)
 		end
 	end
 
-	-- Spawn on floor 1 — on the ground inside the elevator room
+	-- Spawning will occur via lobby elevator teleportation
 	if floorIdx == 1 then
-		local eR = math.ceil(GRID_SIZE / 2)
-		local eC = math.ceil(GRID_SIZE / 2)
-		if cellData[eR] and cellData[eR][eC] then
-			-- Delete any existing SpawnLocations
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("SpawnLocation") then obj:Destroy() end
-			end
-			local spawnOrigin = cellData[eR][eC].origin
-			local sp = Instance.new("SpawnLocation")
-			sp.Anchored = true
-			sp.CanCollide = true
-			sp.Size = Vector3.new(4, 1, 4)
-			sp.CFrame = CFrame.new(spawnOrigin + Vector3.new(0, 0.5, 0))
-			sp.TopSurface = Enum.SurfaceType.Smooth
-			sp.Transparency = 1
-			sp.Name = "ElevatorSpawn"
-			sp.Parent = ff
-			print("[Bootstrap] Spawn at:", spawnOrigin + Vector3.new(0, 0.5, 0))
-		end
+		print("[Bootstrap] Floor 1 generated. Spawn location will be handled in lobby.")
 	end
 
 	return ff
@@ -691,4 +645,448 @@ for floor = 1, FLOORS do
 	print("[Bootstrap] Floor", floor, "built. Theme:", getTheme(floor).Name)
 end
 
-print("[Bootstrap] Done! "..FLOORS.." floors with seed "..SEED..". All rooms are 24x24, doors on all 4 walls. SAVE the place!")
+-- Define buildLobby inside MAIN or call it
+local function buildLobby(mapFolder)
+	local lobbyFolder = Instance.new("Folder")
+	lobbyFolder.Name = "Lobby"
+	lobbyFolder.Parent = mapFolder
+
+	local lobbyHeight = 100
+	local sz = 60
+	local wallH = 20
+	local thick = 1
+
+	-- Floor
+	local floor = mp({
+		Name = "Floor",
+		Size = Vector3.new(sz, thick, sz),
+		CFrame = CFrame.new(0, lobbyHeight - thick/2, 0),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(60, 62, 65),
+		Parent = lobbyFolder
+	})
+
+	-- Ceiling
+	local ceiling = mp({
+		Name = "Ceiling",
+		Size = Vector3.new(sz, thick, sz),
+		CFrame = CFrame.new(0, lobbyHeight + wallH + thick/2, 0),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(180, 180, 185),
+		Parent = lobbyFolder
+	})
+
+	-- Walls
+	mp({
+		Name = "NorthWall",
+		Size = Vector3.new(sz, wallH, thick),
+		CFrame = CFrame.new(0, lobbyHeight + wallH/2, -sz/2),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(90, 92, 95),
+		Parent = lobbyFolder
+	})
+	mp({
+		Name = "SouthWall",
+		Size = Vector3.new(sz, wallH, thick),
+		CFrame = CFrame.new(0, lobbyHeight + wallH/2, sz/2),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(90, 92, 95),
+		Parent = lobbyFolder
+	})
+	mp({
+		Name = "EastWall",
+		Size = Vector3.new(thick, wallH, sz),
+		CFrame = CFrame.new(sz/2, lobbyHeight + wallH/2, 0),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(90, 92, 95),
+		Parent = lobbyFolder
+	})
+	mp({
+		Name = "WestWall",
+		Size = Vector3.new(thick, wallH, sz),
+		CFrame = CFrame.new(-sz/2, lobbyHeight + wallH/2, 0),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(90, 92, 95),
+		Parent = lobbyFolder
+	})
+
+	-- Ceiling lights
+	for _, x in ipairs({-15, 15}) do
+		for _, z in ipairs({-15, 15}) do
+			local lh = mp({
+				Name = "LobbyCeilingLight",
+				Size = Vector3.new(4, 0.3, 1),
+				CFrame = CFrame.new(x, lobbyHeight + wallH - 0.2, z),
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(235, 230, 210),
+				Parent = lobbyFolder
+			})
+			local l = Instance.new("SurfaceLight")
+			l.Face = Enum.NormalId.Bottom
+			l.Brightness = 1.5
+			l.Range = 40
+			l.Color = Color3.fromRGB(235, 230, 210)
+			l.Parent = lh
+		end
+	end
+
+	-- Default Spawn Location inside Lobby
+	local spawnLoc = Instance.new("SpawnLocation")
+	spawnLoc.Name = "LobbySpawn"
+	spawnLoc.Anchored = true
+	spawnLoc.CanCollide = true
+	spawnLoc.Neutral = true
+	spawnLoc.Size = Vector3.new(6, 0.2, 6)
+	spawnLoc.CFrame = CFrame.new(0, lobbyHeight + 0.1, 0)
+	spawnLoc.Color = Color3.fromRGB(80, 82, 85)
+	spawnLoc.Material = Enum.Material.Concrete
+	spawnLoc.TopSurface = Enum.SurfaceType.Smooth
+	spawnLoc.Parent = lobbyFolder
+
+	local spawnDecal = Instance.new("Decal")
+	spawnDecal.Face = Enum.NormalId.Top
+	spawnDecal.Texture = "rbxassetid://15264350172"
+	spawnDecal.Transparency = 0.5
+	spawnDecal.Parent = spawnLoc
+
+	-- SP Elevator
+	local spElev = Instance.new("Folder")
+	spElev.Name = "SinglePlayerElevator"
+	spElev.Parent = lobbyFolder
+
+	local function makeElevatorBox(folder, name, xCenter, isLocked, titleText, titleColor)
+		local zCenter = -sz/2 + 3
+		-- Side Walls
+		mp({
+			Name = "LeftWall",
+			Size = Vector3.new(0.2, 10, 6),
+			CFrame = CFrame.new(xCenter - 4, lobbyHeight + 5, zCenter),
+			Material = Enum.Material.Metal,
+			Color = Color3.fromRGB(60, 60, 65),
+			Parent = folder
+		})
+		mp({
+			Name = "RightWall",
+			Size = Vector3.new(0.2, 10, 6),
+			CFrame = CFrame.new(xCenter + 4, lobbyHeight + 5, zCenter),
+			Material = Enum.Material.Metal,
+			Color = Color3.fromRGB(60, 60, 65),
+			Parent = folder
+		})
+		-- Back Wall
+		mp({
+			Name = "BackWall",
+			Size = Vector3.new(8, 10, 0.2),
+			CFrame = CFrame.new(xCenter, lobbyHeight + 5, zCenter - 3),
+			Material = Enum.Material.Metal,
+			Color = Color3.fromRGB(60, 60, 65),
+			Parent = folder
+		})
+		-- Roof
+		mp({
+			Name = "Roof",
+			Size = Vector3.new(8, 0.2, 6),
+			CFrame = CFrame.new(xCenter, lobbyHeight + 10, zCenter),
+			Material = Enum.Material.Metal,
+			Color = Color3.fromRGB(60, 60, 65),
+			Parent = folder
+		})
+
+		-- Glowing floor pad
+		local pad = mp({
+			Name = "GlowPad",
+			Size = Vector3.new(7.6, 0.2, 5.6),
+			CFrame = CFrame.new(xCenter, lobbyHeight + 0.1, zCenter),
+			Material = Enum.Material.Neon,
+			Color = isLocked and Color3.fromRGB(180, 50, 50) or Color3.fromRGB(50, 150, 220),
+			CanCollide = false,
+			Parent = folder
+		})
+
+		-- Billboard Gui above elevator opening
+		local board = mp({
+			Name = "Sign",
+			Size = Vector3.new(8, 1.5, 0.2),
+			CFrame = CFrame.new(xCenter, lobbyHeight + 10.75, zCenter + 3),
+			Material = Enum.Material.SmoothPlastic,
+			Color = Color3.fromRGB(30, 30, 32),
+			Parent = folder
+		})
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.new(0, 300, 0, 80)
+		bb.StudsOffset = Vector3.new(0, 0, 0.2)
+		bb.AlwaysOnTop = true
+		bb.Adornee = board
+		bb.Parent = board
+
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 1, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Font = Enum.Font.Code
+		lbl.TextSize = 18
+		lbl.TextColor3 = titleColor
+		lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		lbl.TextStrokeTransparency = 0
+		lbl.Text = titleText
+		lbl.Parent = bb
+
+		if isLocked then
+			-- Locked visual: neon red bars across entrance
+			for i = -3, 3, 2 do
+				local bar = mp({
+					Name = "GateBar",
+					Size = Vector3.new(0.2, 10, 0.2),
+					CFrame = CFrame.new(xCenter + i, lobbyHeight + 5, zCenter + 3),
+					Material = Enum.Material.Neon,
+					Color = Color3.fromRGB(180, 50, 50),
+					Parent = folder
+				})
+			end
+			-- Locked control panel
+			local panel = mp({
+				Name = "LockedPanel",
+				Size = Vector3.new(0.2, 1.5, 1),
+				CFrame = CFrame.new(xCenter + 3.8, lobbyHeight + 3.5, zCenter + 1),
+				Material = Enum.Material.Metal,
+				Color = Color3.fromRGB(70, 70, 75),
+				Parent = folder
+			})
+			local btn = mp({
+				Name = "Button",
+				Size = Vector3.new(0.25, 0.3, 0.3),
+				CFrame = CFrame.new(xCenter + 3.9, lobbyHeight + 3.8, zCenter + 1),
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(180, 50, 50),
+				Parent = folder
+			})
+			local prompt = Instance.new("ProximityPrompt")
+			prompt.ActionText = "LOCKED"
+			prompt.ObjectText = "Coming Soon"
+			prompt.MaxActivationDistance = 0
+			prompt.Parent = panel
+		else
+			-- Active elevator: panel with trigger prompt
+			local panel = mp({
+				Name = "ElevatorPanel",
+				Size = Vector3.new(0.2, 1.5, 1),
+				CFrame = CFrame.new(xCenter + 3.8, lobbyHeight + 3.5, zCenter + 1),
+				Material = Enum.Material.Metal,
+				Color = Color3.fromRGB(70, 70, 75),
+				Parent = folder
+			})
+			local btn = mp({
+				Name = "ElevatorButton",
+				Size = Vector3.new(0.25, 0.3, 0.3),
+				CFrame = CFrame.new(xCenter + 3.9, lobbyHeight + 3.8, zCenter + 1),
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(50, 180, 80),
+				Parent = folder
+			})
+			local prompt = Instance.new("ProximityPrompt")
+			prompt.ActionText = "Start Game"
+			prompt.ObjectText = "Single Player"
+			prompt.MaxActivationDistance = 8
+			prompt.HoldDuration = 0.5
+			prompt.Parent = panel
+			game:GetService("CollectionService"):AddTag(panel, "SinglePlayerStartPanel")
+		end
+	end
+
+	makeElevatorBox(spElev, "SinglePlayer", -15, false, "SINGLE PLAYER\n[READY]", Color3.fromRGB(50, 200, 220))
+
+	-- Co-op Elevator
+	local coopElev = Instance.new("Folder")
+	coopElev.Name = "CoopElevator"
+	coopElev.Parent = lobbyFolder
+	makeElevatorBox(coopElev, "Coop", 0, true, "MULTIPLAYER CO-OP\n[COMING SOON]", Color3.fromRGB(180, 50, 50))
+
+	-- Endless Elevator
+	local endlessElev = Instance.new("Folder")
+	endlessElev.Name = "EndlessElevator"
+	endlessElev.Parent = lobbyFolder
+	makeElevatorBox(endlessElev, "Endless", 15, true, "ENDLESS MODE\n[COMING SOON]", Color3.fromRGB(180, 50, 50))
+
+	-- Monetization Shop Pads
+	local function makeShopPad(name, x, z, col, labelText)
+		local pad = Instance.new("Part")
+		pad.Name = name
+		pad.Shape = Enum.PartType.Cylinder
+		pad.Size = Vector3.new(0.2, 6, 6)
+		pad.CFrame = CFrame.new(x, lobbyHeight + 0.1, z) * CFrame.Angles(0, 0, math.rad(90))
+		pad.Anchored = true
+		pad.CanCollide = false
+		pad.Material = Enum.Material.Neon
+		pad.Color = col
+		pad.Parent = lobbyFolder
+
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.new(0, 250, 0, 60)
+		bb.StudsOffset = Vector3.new(0, 4, 0)
+		bb.AlwaysOnTop = true
+		bb.Adornee = pad
+		bb.Parent = pad
+
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 1, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Font = Enum.Font.Code
+		lbl.TextSize = 14
+		lbl.TextColor3 = col
+		lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		lbl.TextStrokeTransparency = 0
+		lbl.Text = labelText .. "\n[SHOP COMING SOON]"
+		lbl.Parent = bb
+	end
+
+	makeShopPad("FlashlightShopPad", -15, 15, Color3.fromRGB(220, 220, 50), "FLASHLIGHT UPGRADES")
+	makeShopPad("CosmeticsShopPad", 15, 15, Color3.fromRGB(160, 50, 220), "COSMETIC TRAILS")
+
+	-- CRT Stats Terminal Console
+	local consoleFolder = Instance.new("Folder")
+	consoleFolder.Name = "StatsTerminal"
+	consoleFolder.Parent = lobbyFolder
+
+	local consoleBase = mp({
+		Name = "ConsoleBase",
+		Size = Vector3.new(1.5, 3.5, 4),
+		CFrame = CFrame.new(sz/2 - 1.25, lobbyHeight + 1.75, 0),
+		Material = Enum.Material.Concrete,
+		Color = Color3.fromRGB(50, 50, 52),
+		Parent = consoleFolder
+	})
+	local monitor = mp({
+		Name = "Monitor",
+		Size = Vector3.new(1.5, 2.5, 3.5),
+		CFrame = CFrame.new(sz/2 - 1.25, lobbyHeight + 4.75, 0),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(40, 40, 42),
+		Parent = consoleFolder
+	})
+	local screen = mp({
+		Name = "Screen",
+		Size = Vector3.new(0.1, 2.2, 3.2),
+		CFrame = CFrame.new(sz/2 - 2.05, lobbyHeight + 4.75, 0),
+		Material = Enum.Material.Glass,
+		Color = Color3.fromRGB(10, 15, 10),
+		Parent = consoleFolder
+	})
+
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.West
+	sg.CanvasSize = Vector2.new(400, 300)
+	sg.Parent = screen
+
+	local screenFrame = Instance.new("Frame")
+	screenFrame.Size = UDim2.new(1, 0, 1, 0)
+	screenFrame.BackgroundColor3 = Color3.fromRGB(10, 20, 10)
+	screenFrame.BorderSizePixel = 0
+	screenFrame.Parent = sg
+
+	local screenText = Instance.new("TextLabel")
+	screenText.Size = UDim2.new(0.9, 0, 0.9, 0)
+	screenText.Position = UDim2.new(0.05, 0, 0.05, 0)
+	screenText.BackgroundTransparency = 1
+	screenText.Font = Enum.Font.Code
+	screenText.TextSize = 14
+	screenText.TextColor3 = Color3.fromRGB(50, 255, 50)
+	screenText.TextXAlignment = Enum.TextXAlignment.Left
+	screenText.TextYAlignment = Enum.TextYAlignment.Top
+	screenText.Text = "=== SYSTEM DIAGNOSTICS ===\n\nLOBBY SYSTEM: ACTIVE\nSINGLE PLAYER PORTAL: READY\nCO-OP SYSTEM: OFFLINE\nMONITORING ANOMALY: DECIBEL\nFACILITY DEPTH: 50 FLOORS\n\nSTATUS: AWAITING EXPEDITION..."
+	screenText.Parent = screenFrame
+
+	-- Obby / Parkour Course
+	local obbyFolder = Instance.new("Folder")
+	obbyFolder.Name = "Obby"
+	obbyFolder.Parent = lobbyFolder
+
+	local obbySteps = {
+		{ Pos = Vector3.new(-28, 102, -20), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-28, 104.5, -12), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
+		{ Pos = Vector3.new(-28, 107, -4), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-28, 109.5, 4), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-25, 112, 12), Size = Vector3.new(1, 0.8, 4), Mat = Enum.Material.Metal, Col = Color3.fromRGB(100, 100, 105) },
+		{ Pos = Vector3.new(-18, 114, 20), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(-10, 116, 26), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(0, 117.5, 27), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(10, 118, 27), Size = Vector3.new(3, 0.8, 3), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(70, 72, 75) },
+		{ Pos = Vector3.new(20, 118.5, 26), Size = Vector3.new(5, 0.8, 5), Mat = Enum.Material.Concrete, Col = Color3.fromRGB(50, 52, 55), IsTrophyPlatform = true },
+	}
+
+	for _, step in ipairs(obbySteps) do
+		local p = mp({
+			Name = "ObbyStep",
+			Size = step.Size,
+			CFrame = CFrame.new(step.Pos),
+			Material = step.Mat,
+			Color = step.Col,
+			Parent = obbyFolder
+		})
+
+		if step.IsTrophyPlatform then
+			local trophyFolder = Instance.new("Folder")
+			trophyFolder.Name = "PrototypeTrophy"
+			trophyFolder.Parent = lobbyFolder
+
+			local tBase = mp({
+				Name = "TrophyBase",
+				Size = Vector3.new(1.2, 0.3, 1.2),
+				CFrame = CFrame.new(step.Pos + Vector3.new(0, 0.55, 0)),
+				Material = Enum.Material.Metal,
+				Color = Color3.fromRGB(150, 120, 40),
+				Parent = trophyFolder
+			})
+			local tStem = mp({
+				Name = "TrophyStem",
+				Size = Vector3.new(0.4, 0.6, 0.4),
+				CFrame = CFrame.new(step.Pos + Vector3.new(0, 1.0, 0)),
+				Material = Enum.Material.Metal,
+				Color = Color3.fromRGB(150, 120, 40),
+				Parent = trophyFolder
+			})
+			local tCup = mp({
+				Name = "TrophyCup",
+				Size = Vector3.new(1.0, 1.0, 1.0),
+				CFrame = CFrame.new(step.Pos + Vector3.new(0, 1.8, 0)),
+				Material = Enum.Material.Neon,
+				Color = Color3.fromRGB(255, 215, 0),
+				Parent = trophyFolder
+			})
+
+			local pl = Instance.new("PointLight")
+			pl.Brightness = 1.0
+			pl.Range = 10
+			pl.Color = Color3.fromRGB(255, 215, 0)
+			pl.Parent = tCup
+
+			local prompt = Instance.new("ProximityPrompt")
+			prompt.ActionText = "Inspect Trophy"
+			prompt.ObjectText = "Obby Champion"
+			prompt.MaxActivationDistance = 8
+			prompt.HoldDuration = 1.0
+			prompt.Parent = tCup
+			game:GetService("CollectionService"):AddTag(tCup, "LobbyTrophy")
+
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.new(0, 200, 0, 50)
+			bb.StudsOffset = Vector3.new(0, 1.5, 0)
+			bb.AlwaysOnTop = true
+			bb.Adornee = tCup
+			bb.Parent = tCup
+
+			local lbl = Instance.new("TextLabel")
+			lbl.Size = UDim2.new(1, 0, 1, 0)
+			lbl.BackgroundTransparency = 1
+			lbl.Font = Enum.Font.Code
+			lbl.TextSize = 14
+			lbl.TextColor3 = Color3.fromRGB(255, 215, 0)
+			lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+			lbl.TextStrokeTransparency = 0
+			lbl.Text = "🏆 PROTOTYPE TROPHY 🏆"
+			lbl.Parent = bb
+		end
+	end
+end
+
+buildLobby(mapFolder)
+
+print("[Bootstrap] Done! "..FLOORS.." floors + Lobby built. SAVE the place!")

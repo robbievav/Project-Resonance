@@ -87,43 +87,44 @@ local function onCharacterAdded(character)
 	end)
 
 	---------------------------------------------------------------------
-	-- CROUCH INPUT
+	-- CROUCH & SPRINT HANDLING
 	---------------------------------------------------------------------
-	UserInputService.InputBegan:Connect(function(input, processed)
-		if processed then return end
-		if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C then
-			isCrouching = true
+	local isSprinting = false
+
+	local function updateMovementState()
+		local wantCrouch = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.C)
+		local wantSprint = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+
+		if wantCrouch ~= isCrouching then
+			isCrouching = wantCrouch
+			if isCrouching then
+				humanoid.HipHeight = humanoid.HipHeight - 1.5
+			else
+				humanoid.HipHeight = humanoid.HipHeight + 1.5
+			end
+		end
+
+		isSprinting = wantSprint and not isCrouching
+
+		if isCrouching then
 			humanoid.WalkSpeed = Config.Player.CrouchSpeed
-			-- Scale the character down slightly to simulate crouching
-			humanoid.HipHeight = humanoid.HipHeight - 1.5
-		end
-	end)
-
-	UserInputService.InputEnded:Connect(function(input, processed)
-		if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C then
-			isCrouching = false
+		elseif isSprinting then
+			humanoid.WalkSpeed = Config.Player.RunSpeed
+		else
 			humanoid.WalkSpeed = Config.Player.WalkSpeed
-			humanoid.HipHeight = humanoid.HipHeight + 1.5
 		end
-	end)
+	end
 
-	---------------------------------------------------------------------
-	-- SPRINT INPUT
-	---------------------------------------------------------------------
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
-		if input.KeyCode == Enum.KeyCode.LeftShift then
-			if not isCrouching then
-				humanoid.WalkSpeed = Config.Player.RunSpeed
-			end
+		if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftShift then
+			updateMovementState()
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, processed)
-		if input.KeyCode == Enum.KeyCode.LeftShift then
-			if not isCrouching then
-				humanoid.WalkSpeed = Config.Player.WalkSpeed
-			end
+		if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftShift then
+			updateMovementState()
 		end
 	end)
 end

@@ -22,6 +22,8 @@ Config.Map = {
 	ActiveFloorRange = 1,          -- only keep ±N floors loaded
 	StairwellGridRow = 2,          -- fixed grid position for stairwells
 	StairwellGridCol = 4,
+	RoomSpacing      = 44,         -- center-to-center spacing
+	LobbyHeight      = 100,        -- vertical Y coordinate for Spawn Hub
 }
 
 ---------------------------------------------------------------------------
@@ -116,13 +118,14 @@ Config.SoundLevels = {
 	DoorOpen  = 0.50,
 	DoorClose = 0.40,
 	ItemDrop  = 0.60,
+	DoorBreak = 0.90,
 }
 
 ---------------------------------------------------------------------------
 -- DECIBEL AI
 ---------------------------------------------------------------------------
 Config.AI = {
-	SpawnDelay           = 30,        -- seconds after round start
+	SpawnDelay           = 15,        -- seconds after round start
 	PatrolSpeed          = 8,
 	ChaseSpeed           = 20,
 	HearingRadius        = 80,       -- studs
@@ -132,6 +135,7 @@ Config.AI = {
 	DifficultyPerFloor   = 0.1,      -- multiplier added per floor
 	FloorTransitionDelay = 5,        -- seconds before AI changes floors
 	DoorBreakTime        = 1.5,      -- seconds to break through a closed door (CHASE)
+	EchoInterval         = 4,        -- seconds between room scans (Echolocation)
 }
 
 ---------------------------------------------------------------------------
@@ -158,17 +162,6 @@ Config.Audio = {
 	DroneFadeTime      = 2,        -- seconds
 }
 
----------------------------------------------------------------------------
--- HIDING SYSTEM
----------------------------------------------------------------------------
-Config.Hiding = {
-	EnterTime          = 0.8,        -- seconds to enter a hiding spot
-	ExitTime           = 0.5,
-	BreathingBarSpeed  = 1.2,        -- how fast the timing bar oscillates
-	BreathingFailVolume = 0.6,       -- noise emitted on fail
-	MaxHideTime        = 45,         -- seconds before forced exit
-	CalmZoneWidth      = 0.3,        -- fraction of bar that is "calm" (0-1)
-}
 
 ---------------------------------------------------------------------------
 -- FLOOR THEMES (deeper floors = more deteriorated)

@@ -28,6 +28,123 @@ local DoorEvent  = GameEvents:WaitForChild("DoorEvent")
 local doorStates = {}  -- [door Part] = { isOpen, originalCF, tweening }
 
 ---------------------------------------------------------------------------
+-- SHAREABLE TOGGLE DOOR METHOD
+---------------------------------------------------------------------------
+local function toggleDoor(door, wantOpen, initiatorPart)
+	local state = doorStates[door]
+	if not state or state.tweening then return end
+	if state.isOpen == wantOpen then return end
+
+	state.tweening = true
+
+	local prompt = door:FindFirstChildOfClass("ProximityPrompt")
+	local hingeSound = door:FindFirstChild("HingeSound")
+
+	if not wantOpen then
+		-- CLOSE the door — tween back to original
+		if prompt then prompt.ActionText = "Open" end
+		local tween = TweenService:Create(door, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			CFrame = state.originalCF
+		})
+		if hingeSound then hingeSound:Play() end
+		tween:Play()
+		tween.Completed:Wait()
+		state.isOpen = false
+		door.CanCollide = true
+
+		emitDoorSound(door.Position, "DoorClose")
+	else
+		-- OPEN the door — swing 90 degrees away from the initiator
+		if prompt then prompt.ActionText = "Close" end
+
+		-- Determine perpendicular normal vector of the door
+		local doorNormal = (door.Size.X > door.Size.Z) and door.CFrame.LookVector or door.CFrame.RightVector
+		
+		-- Default swing direction, flip if initiator is on positive normal side
+		local angle = 90
+		if initiatorPart then
+			local toInitiator = initiatorPart.Position - door.Position
+			local dot = toInitiator:Dot(doorNormal)
+			if dot > 0 then
+				angle = -90
+			end
+		end
+
+		-- Compute the world-space hinge position
+		local hingeCF = state.originalCF * state.hingeOffset
+		-- Rotate around the hinge, then offset back
+		local openCF = hingeCF * CFrame.Angles(0, math.rad(angle), 0) * state.hingeOffset:Inverse()
+
+		local tween = TweenService:Create(door, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			CFrame = openCF
+		})
+		if hingeSound then hingeSound:Play() end
+		tween:Play()
+		tween.Completed:Wait()
+		state.isOpen = true
+		door.CanCollide = false
+
+		emitDoorSound(door.Position, "DoorOpen")
+	end
+
+	state.tweening = false
+
+	-- Notify clients about door state change
+	DoorEvent:FireAllClients({
+		DoorId   = door:GetFullName(),
+		IsOpen   = state.isOpen,
+		Position = door.Position,
+	})
+end
+
+local function breakDoor(door, initiatorPart)
+	local state = doorStates[door]
+	if not state or state.tweening then return end
+
+	state.tweening = true
+
+	local prompt = door:FindFirstChildOfClass("ProximityPrompt")
+	if prompt then
+		prompt.Enabled = false
+	end
+
+	-- Determine perpendicular normal vector of the door
+	local doorNormal = (door.Size.X > door.Size.Z) and door.CFrame.LookVector or door.CFrame.RightVector
+	
+	-- Determine swing direction based on initiator position relative to normal
+	local angle = 110
+	if initiatorPart then
+		local toInitiator = initiatorPart.Position - door.Position
+		local dot = toInitiator:Dot(doorNormal)
+		if dot > 0 then
+			angle = -110
+		end
+	end
+
+	-- Compute the world-space hinge position
+	local hingeCF = state.originalCF * state.hingeOffset
+	-- Rotate 110 degrees around the hinge violently
+	local openCF = hingeCF * CFrame.Angles(0, math.rad(angle), 0) * state.hingeOffset:Inverse()
+
+	local tween = TweenService:Create(door, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		CFrame = openCF
+	})
+	
+	local hingeSound = door:FindFirstChild("HingeSound")
+	if hingeSound then hingeSound:Play() end
+	
+	tween:Play()
+	tween.Completed:Wait()
+
+	state.isOpen = true
+	door.CanCollide = false
+	state.tweening = false
+
+	-- Emit door break sound (loud)
+	emitDoorSound(door.Position, "DoorBreak")
+end
+
+---------------------------------------------------------------------------
 -- SETUP: Find all doors and attach listeners
 ---------------------------------------------------------------------------
 local function setupDoors()
@@ -44,6 +161,15 @@ local function setupDoors()
 	print("[DoorSystem] Found", #doors, "doors.")
 
 	for _, door in ipairs(doors) do
+		-- Inject PathfindingModifier dynamically as a fallback for old/active maps
+		local pm = door:FindFirstChildOfClass("PathfindingModifier")
+		if not pm then
+			pm = Instance.new("PathfindingModifier")
+			pm.Label = "Door"
+			pm.PassThrough = true
+			pm.Parent = door
+		end
+
 		-- Determine the hinge offset based on door orientation
 		-- Hinge on the left edge of the door (relative to its local axes)
 		local doorSize = door.Size
@@ -77,51 +203,9 @@ local function setupDoors()
 			prompt.Triggered:Connect(function(player)
 				local state = doorStates[door]
 				if not state or state.tweening then return end
-
-				state.tweening = true
-
-				if state.isOpen then
-					-- CLOSE the door — tween back to original
-					prompt.ActionText = "Open"
-					local tween = TweenService:Create(door, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						CFrame = state.originalCF
-					})
-					hingeSound:Play()
-					tween:Play()
-					tween.Completed:Wait()
-					state.isOpen = false
-					door.CanCollide = true
-
-					emitDoorSound(door.Position, "DoorClose")
-				else
-					-- OPEN the door — rotate 90° around the hinge edge
-					prompt.ActionText = "Close"
-
-					-- Compute the world-space hinge position
-					local hingeCF = state.originalCF * state.hingeOffset
-					-- Rotate 90° around the hinge, then offset back
-					local openCF = hingeCF * CFrame.Angles(0, math.rad(90), 0) * state.hingeOffset:Inverse()
-
-					local tween = TweenService:Create(door, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						CFrame = openCF
-					})
-					hingeSound:Play()
-					tween:Play()
-					tween.Completed:Wait()
-					state.isOpen = true
-					door.CanCollide = false
-
-					emitDoorSound(door.Position, "DoorOpen")
-				end
-
-				state.tweening = false
-
-				-- Notify clients about door state change
-				DoorEvent:FireAllClients({
-					DoorId   = door:GetFullName(),
-					IsOpen   = state.isOpen,
-					Position = door.Position,
-				})
+				local char = player.Character
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				toggleDoor(door, not state.isOpen, root)
 			end)
 		end
 	end
@@ -131,11 +215,6 @@ end
 -- EMIT DOOR SOUND (directly to SoundEmitter's active sounds)
 ---------------------------------------------------------------------------
 function emitDoorSound(position, soundType)
-	local getSoundsFunc = game:GetService("ServerStorage"):FindFirstChild("GetActiveSounds")
-	-- We can't easily push; instead use a BindableEvent approach
-	-- For now, fire a custom event that the SoundEmitter picks up
-
-	-- Create a one-shot BindableEvent if it doesn't exist
 	local emitFunc = game:GetService("ServerStorage"):FindFirstChild("EmitSound")
 	if not emitFunc then
 		emitFunc = Instance.new("BindableEvent")
@@ -158,15 +237,37 @@ end
 -- Also listen for the BindableEvent on the SoundEmitter side
 task.spawn(function()
 	local ServerStorage = game:GetService("ServerStorage")
-	-- Create EmitSound event if it doesn't exist
 	local emitEvent = ServerStorage:FindFirstChild("EmitSound")
 	if not emitEvent then
 		emitEvent = Instance.new("BindableEvent")
 		emitEvent.Name = "EmitSound"
 		emitEvent.Parent = ServerStorage
 	end
+end)
 
-	-- The SoundEmitter will hook into this in its own script
+-- Register ToggleDoor BindableEvent for external caller scripts (like DecibelAI)
+local ServerStorage = game:GetService("ServerStorage")
+local toggleDoorEvent = ServerStorage:FindFirstChild("ToggleDoor")
+if not toggleDoorEvent then
+	toggleDoorEvent = Instance.new("BindableEvent")
+	toggleDoorEvent.Name = "ToggleDoor"
+	toggleDoorEvent.Parent = ServerStorage
+end
+
+toggleDoorEvent.Event:Connect(function(door, wantOpen, initiatorPart)
+	toggleDoor(door, wantOpen, initiatorPart)
+end)
+
+-- Register BreakDoor BindableEvent for Decibel AI violent breaks
+local breakDoorEvent = ServerStorage:FindFirstChild("BreakDoor")
+if not breakDoorEvent then
+	breakDoorEvent = Instance.new("BindableEvent")
+	breakDoorEvent.Name = "BreakDoor"
+	breakDoorEvent.Parent = ServerStorage
+end
+
+breakDoorEvent.Event:Connect(function(door, initiatorPart)
+	breakDoor(door, initiatorPart)
 end)
 
 setupDoors()
