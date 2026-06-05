@@ -52,6 +52,7 @@ local function makeKey(parent, position)
 	prompt.ObjectText          = "Research Key"
 	prompt.MaxActivationDistance = 8
 	prompt.HoldDuration        = 0
+	prompt.RequiresLineOfSight = false
 	prompt.Parent              = body
 
 	-- Slow spin

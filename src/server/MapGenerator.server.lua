@@ -155,8 +155,8 @@ local function teleportToFloor(player, targetFloor)
 		else
 			estimatedY = -(targetFloor - 1) * MC.FloorSeparation + 5
 		end
-		root.CFrame = CFrame.new(root.Position.X, estimatedY, root.Position.Z)
-		warn("[MapGenerator] Could not find elevator room on floor", targetFloor, "— used Y estimate.")
+		root.CFrame = CFrame.new(0, estimatedY + 3, 2)
+		warn("[MapGenerator] Could not find elevator room on floor", targetFloor, "— used Y estimate at room center.")
 	end
 
 	task.wait(0.3)
@@ -234,6 +234,7 @@ end
 local function connectElevatorPanel(panel)
 	local prompt = panel:FindFirstChildOfClass("ProximityPrompt")
 	if not prompt then return end
+	prompt.RequiresLineOfSight = false
 
 	prompt.Triggered:Connect(function(player)
 		local currentFloor = player:GetAttribute("CurrentFloor") or 1
@@ -265,6 +266,7 @@ end
 local function connectSinglePlayerPanel(panel)
 	local prompt = panel:FindFirstChildOfClass("ProximityPrompt")
 	if not prompt then return end
+	prompt.RequiresLineOfSight = false
 
 	prompt.Triggered:Connect(function(player)
 		if player:GetAttribute("SinglePlayerActive") then return end
@@ -333,6 +335,7 @@ local function connectTrackerShop(pad)
 		prompt.HoldDuration = 0
 		prompt.Parent = pad
 	end
+	prompt.RequiresLineOfSight = false
 
 	prompt.Triggered:Connect(function(player)
 		local ServerStorage = game:GetService("ServerStorage")

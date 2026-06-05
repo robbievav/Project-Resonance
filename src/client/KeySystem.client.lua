@@ -200,6 +200,7 @@ local CollectionService = game:GetService("CollectionService")
 local function connectTrophy(trophyPart)
 	local prompt = trophyPart:FindFirstChildOfClass("ProximityPrompt")
 	if not prompt then return end
+	prompt.RequiresLineOfSight = false
 	prompt.Triggered:Connect(function()
 		keyIcon.Text = "🏆"
 		keyLabel.Text = "Prototype Trophy inspected! Obby Completed!"

@@ -200,6 +200,7 @@ local function setupDoors()
 		-- Listen for ProximityPrompt activation
 		local prompt = door:FindFirstChildOfClass("ProximityPrompt")
 		if prompt then
+			prompt.RequiresLineOfSight = false
 			prompt.Triggered:Connect(function(player)
 				local state = doorStates[door]
 				if not state or state.tweening then return end
