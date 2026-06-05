@@ -274,6 +274,16 @@ local function setupPlayer(player)
 				player:SetAttribute(name, nil)
 			end
 		end
+
+		-- Teleport player inside the lobby to prevent spawning on the roof
+		task.wait(0.1)
+		local root = char:FindFirstChild("HumanoidRootPart")
+		local lobbySpawn = workspace:FindFirstChild("GeneratedMap") 
+			and workspace.GeneratedMap:FindFirstChild("Lobby") 
+			and workspace.GeneratedMap.Lobby:FindFirstChild("LobbySpawn")
+		if root and lobbySpawn then
+			root.CFrame = lobbySpawn.CFrame + Vector3.new(0, 3, 0)
+		end
 	end)
 end
 
