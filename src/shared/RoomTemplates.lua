@@ -120,6 +120,40 @@ RoomTemplates.Dormitory = {
 	HidingSpots = {},
 }
 
+RoomTemplates.PoolRoom = {
+	Name = "PoolRoom",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial = Config.Materials.Tile, FloorColor = Color3.fromRGB(235, 235, 235),
+	WallMaterial = Config.Materials.Wall, WallColor = Config.Colors.WallPaint,
+	CeilingColor = Config.Colors.CeilingPanel,
+	Doors = { door("NegZ", 0) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
+	Furniture = {
+		fixture("PoolWater", 0, 0.1, 0, 0),
+		fixture("PoolPillar", 0, 0, 0, 0),
+		fixture("Lounger", -8, 0, -8, 45)
+	},
+	HidingSpots = {},
+}
+
+RoomTemplates.YellowOffice = {
+	Name = "YellowOffice",
+	SizeMultiplier = Vector3.new(1.5, 1, 1.5),
+	FloorMaterial = Config.Materials.Floor, FloorColor = Color3.fromRGB(165, 155, 115),
+	WallMaterial = Config.Materials.Wall, WallColor = Color3.fromRGB(215, 205, 150),
+	CeilingColor = Color3.fromRGB(185, 185, 170),
+	Doors = { door("NegZ", 0) },
+	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
+	Furniture = {
+		fixture("PartitionWall", -4, 0, 0, 90),
+		fixture("PartitionWall", 4, 0, 4, 0),
+		fixture("Desk", -8, 0, -8, 90),
+		fixture("Chair", -5, 0, -8, -90),
+		fixture("FilingCabinet", 8, 0, -8, 180)
+	},
+	HidingSpots = {},
+}
+
 RoomTemplates.Elevator = {
 	Name = "Elevator",
 	SizeMultiplier = Vector3.new(0.5, 1.5, 0.5),

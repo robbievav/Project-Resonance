@@ -12,7 +12,7 @@
 -- CONFIG
 -----------------------------------------------------------------------
 local SEED            = 0          -- 0 = random seed each launch
-local FLOORS          = 3         -- floors to bake (increase as needed)
+local FLOORS          = 5         -- floors to bake (increase as needed)
 local GRID_SIZE       = 5
 local ROOM_UNIT       = 36        -- every room is exactly 36x36 studs
 local GRID_SPACING    = 44        -- center-to-center distance between rooms
@@ -60,10 +60,11 @@ local function getTheme(f)
 	return THEMES[1]
 end
 
--- Room Weights (for random selection) — only the 6 unique rooms
+-- Room Weights (for random selection)
 local ROOM_WEIGHTS = {
-	MedBay=15, BreakRoom=15, ArchiveRoom=15, SecurityStation=12,
-	MechanicalRoom=15, Dormitory=15,
+	MedBay=10, BreakRoom=10, ArchiveRoom=10, SecurityStation=8,
+	MechanicalRoom=10, Dormitory=10,
+	PoolRoom=15, YellowOffice=15,
 }
 
 -----------------------------------------------------------------------
@@ -228,6 +229,40 @@ ROOMS.Dormitory = {
 }
 
 -----------------------------------------------------------------------
+-- ROOM 7: PoolRoom — White-tiled subterranean water chamber
+-----------------------------------------------------------------------
+ROOMS.PoolRoom = {
+	Name="PoolRoom", FloorMat="Marble", FloorCol=Color3.fromRGB(235, 235, 235),
+	CeilCol=Color3.fromRGB(220, 220, 220),
+	Fixtures={
+		fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6),
+		{ Type="PoolWater", Offset=Vector3.new(0,0.1,0), Rotation=0 }
+	},
+	Furniture={
+		{ Type="PoolPillar", Offset=Vector3.new(0,0,0), Rotation=0 },
+		{ Type="Lounger", Offset=Vector3.new(-8,0,-8), Rotation=45 }
+	},
+	HidingSpots={},
+}
+
+-----------------------------------------------------------------------
+-- ROOM 8: YellowOffice — Sickly yellow monospace office layout
+-----------------------------------------------------------------------
+ROOMS.YellowOffice = {
+	Name="YellowOffice", FloorMat="SmoothPlastic", FloorCol=Color3.fromRGB(165, 155, 115),
+	CeilCol=Color3.fromRGB(185, 185, 170),
+	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
+	Furniture={
+		{ Type="PartitionWall", Offset=Vector3.new(-4,0,0), Rotation=90 },
+		{ Type="PartitionWall", Offset=Vector3.new(4,0,4), Rotation=0 },
+		fix("Desk",-8,0,-8,90),
+		fix("Chair",-5,0,-8,-90),
+		fix("FileCab",8,0,-8,180),
+	},
+	HidingSpots={},
+}
+
+-----------------------------------------------------------------------
 -- SPECIAL ROOMS (placed explicitly, not randomly)
 -----------------------------------------------------------------------
 ROOMS.Elevator = {
@@ -318,6 +353,65 @@ local function getModelBounds(model)
 end
 
 local function cloneFurniture(typeName, pos, rot, parent)
+	if typeName == "PoolWater" then
+		local water = mp({
+			Name = "WaterPlane",
+			Size = Vector3.new(14, 0.2, 14),
+			CFrame = CFrame.new(pos),
+			Material = Enum.Material.Glass,
+			Color = Color3.fromRGB(0, 160, 210),
+			Parent = parent,
+			CanCollide = false
+		})
+		water.Transparency = 0.4
+		local pl = Instance.new("PointLight")
+		pl.Brightness = 0.5
+		pl.Range = 15
+		pl.Color = Color3.fromRGB(0, 200, 255)
+		pl.Parent = water
+		return
+	elseif typeName == "PoolPillar" then
+		mp({
+			Name = "PoolPillar",
+			Size = Vector3.new(3, WALL_HEIGHT, 3),
+			CFrame = CFrame.new(pos + Vector3.new(0, WALL_HEIGHT/2, 0)),
+			Material = Enum.Material.Marble,
+			Color = Color3.fromRGB(235, 235, 235),
+			Parent = parent
+		})
+		return
+	elseif typeName == "Lounger" then
+		local r = CFrame.Angles(0, math.rad(rot), 0)
+		local base = mp({
+			Name = "LoungerBase",
+			Size = Vector3.new(2, 0.4, 5),
+			CFrame = CFrame.new(pos + Vector3.new(0, 0.2, 0)) * r,
+			Material = Enum.Material.SmoothPlastic,
+			Color = Color3.fromRGB(240, 240, 245),
+			Parent = parent
+		})
+		mp({
+			Name = "LoungerBack",
+			Size = Vector3.new(2, 1.8, 0.3),
+			CFrame = CFrame.new(pos) * r * CFrame.new(0, 1.0, -2.3) * CFrame.Angles(math.rad(-30), 0, 0),
+			Material = Enum.Material.SmoothPlastic,
+			Color = Color3.fromRGB(240, 240, 245),
+			Parent = parent
+		})
+		return
+	elseif typeName == "PartitionWall" then
+		local r = CFrame.Angles(0, math.rad(rot), 0)
+		mp({
+			Name = "PartitionWall",
+			Size = Vector3.new(1, WALL_HEIGHT, 12),
+			CFrame = CFrame.new(pos + Vector3.new(0, WALL_HEIGHT/2, 0)) * r,
+			Material = Enum.Material.Concrete,
+			Color = Color3.fromRGB(215, 205, 150),
+			Parent = parent
+		})
+		return
+	end
+
 	-- Special case: ElevatorPanel is game-specific (neon button)
 	if typeName == "ElevatorPanel" then
 		local r = CFrame.Angles(0, math.rad(rot), 0)

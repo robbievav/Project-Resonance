@@ -10,7 +10,7 @@ local Config = {}
 ---------------------------------------------------------------------------
 Config.Map = {
 	Seed             = 0,          -- 0 = random seed each round
-	FloorsToGenerate = 50,         -- full facility depth
+	FloorsToGenerate = 5,          -- 5 floors for Single Player mode
 	RoomGridSize     = 5,          -- NxN grid of rooms per floor
 	RoomUnit         = 36,         -- studs per room tile
 	HallwayWidth     = 8,          -- studs
