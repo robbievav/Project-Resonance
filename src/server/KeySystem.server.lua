@@ -54,8 +54,7 @@ local function makeKey(parent, position)
 	prompt.HoldDuration        = 0
 	prompt.Parent              = body
 
-	-- Slow spin via script tag (AtmosphereController handles neon objects,
-	-- but we do a simple heartbeat spin here)
+	-- Slow spin
 	local startCF = body.CFrame
 	local conn; conn = game:GetService("RunService").Heartbeat:Connect(function(dt)
 		if body.Parent == nil then conn:Disconnect(); return end
@@ -67,79 +66,83 @@ local function makeKey(parent, position)
 end
 
 ---------------------------------------------------------------------------
--- SPAWN KEY ON A FLOOR
+-- SPAWN KEYS BY FOLDER
 ---------------------------------------------------------------------------
-local spawnedKeys = {}  -- [floorIndex] = {keyModel, floorFolder}
+local function spawnKeysInFolder(folder, isMultiplayer)
+	for _, floorFolder in ipairs(folder:GetChildren()) do
+		if floorFolder.Name:find("Floor_") then
+			local floorIndex = tonumber(floorFolder.Name:match("%d+"))
+			if floorIndex then
+				local candidates = {}
+				for _, roomFolder in ipairs(floorFolder:GetChildren()) do
+					local rtype = roomFolder:GetAttribute("RoomType") or roomFolder.Name
+					if rtype ~= "Elevator" and rtype ~= "Stairwell" and roomFolder:IsA("Folder") then
+						for _, part in ipairs(roomFolder:GetDescendants()) do
+							if part:IsA("BasePart") and part.Name == "Floor" then
+								table.insert(candidates, part)
+								break
+							end
+						end
+					end
+				end
 
-local function spawnKeyOnFloor(floorIndex)
-	local floorFolder = mapFolder:FindFirstChild("Floor_" .. floorIndex)
-	if not floorFolder then return end
+				if #candidates > 0 then
+					local chosen = candidates[math.random(1, #candidates)]
+					local cornerOffsets = {
+						Vector3.new(10, 0, 10), Vector3.new(-10, 0, 10),
+						Vector3.new(10, 0, -10), Vector3.new(-10, 0, -10),
+					}
+					local corner = cornerOffsets[math.random(1, #cornerOffsets)]
+					local spawnPos = chosen.Position + Vector3.new(corner.X, chosen.Size.Y / 2 + 1, corner.Z)
 
-	-- Collect candidate rooms (not Elevator or Stairwell)
-	local candidates = {}
-	for _, roomFolder in ipairs(floorFolder:GetChildren()) do
-		local rtype = roomFolder:GetAttribute("RoomType") or roomFolder.Name
-		if rtype ~= "Elevator" and rtype ~= "Stairwell" and roomFolder:IsA("Folder") then
-			-- Find a floor part to place the key on
-			for _, part in ipairs(roomFolder:GetDescendants()) do
-				if part:IsA("BasePart") and part.Name == "Floor" then
-					table.insert(candidates, part)
-					break
+					local keyModel, keyBody, prompt = makeKey(floorFolder, spawnPos)
+
+					prompt.Triggered:Connect(function(player)
+						if isMultiplayer then
+							-- Share key with all active multiplayer players on this floor
+							for _, p in ipairs(Players:GetPlayers()) do
+								if p:GetAttribute("MultiplayerActive") == true and p:GetAttribute("CurrentFloor") == floorIndex then
+									p:SetAttribute("MP_KeyFloor_" .. floorIndex, true)
+									if KeyCollected then
+										KeyCollected:FireClient(p, floorIndex)
+									end
+								end
+							end
+							print("[KeySystem]", player.Name, "picked up multiplayer key for floor", floorIndex, "(Shared with team)")
+						else
+							-- Single Player key
+							player:SetAttribute("SP_KeyFloor_" .. floorIndex, true)
+							if KeyCollected then
+								KeyCollected:FireClient(player, floorIndex)
+							end
+							print("[KeySystem]", player.Name, "picked up single-player key for floor", floorIndex)
+						end
+
+						keyModel:Destroy()
+					end)
+
+					print("[KeySystem] Key spawned on", isMultiplayer and "Multiplayer" or "SinglePlayer", "floor", floorIndex, "in room:", chosen.Parent.Name)
+				else
+					warn("[KeySystem] No candidate rooms found on floor", floorIndex)
 				end
 			end
 		end
 	end
-
-	if #candidates == 0 then
-		warn("[KeySystem] No candidate rooms found on floor", floorIndex)
-		return
-	end
-
-	local chosen = candidates[math.random(1, #candidates)]
-	-- Spawn near a random wall corner, not the floor center
-	local cornerOffsets = {
-		Vector3.new(10, 0, 10), Vector3.new(-10, 0, 10),
-		Vector3.new(10, 0, -10), Vector3.new(-10, 0, -10),
-	}
-	local corner = cornerOffsets[math.random(1, #cornerOffsets)]
-	local spawnPos = chosen.Position + Vector3.new(corner.X, chosen.Size.Y / 2 + 1, corner.Z)
-
-	local keyModel, keyBody, prompt = makeKey(floorFolder, spawnPos)
-	spawnedKeys[floorIndex] = keyModel
-
-	-- Handle pickup
-	prompt.Triggered:Connect(function(player)
-		-- Mark player as having the key for this floor
-		player:SetAttribute("KeyFloor_" .. floorIndex, true)
-
-		-- Notify client
-		if KeyCollected then
-			KeyCollected:FireClient(player, floorIndex)
-		end
-
-		-- Remove the key from the world
-		keyModel:Destroy()
-		spawnedKeys[floorIndex] = nil
-
-		print("[KeySystem]", player.Name, "picked up key for floor", floorIndex)
-	end)
-
-	print("[KeySystem] Key spawned on floor", floorIndex, "in room:", chosen.Parent.Name)
 end
 
 ---------------------------------------------------------------------------
--- SPAWN KEYS FOR ALL EXISTING FLOORS
+-- INITIALIZATION
 ---------------------------------------------------------------------------
-task.wait(2)  -- give MapGenerator time to finish setup
+task.wait(2)  -- wait for map generator setup
 
-local floorCount = #mapFolder:GetChildren()
-for i = 1, floorCount do
-	spawnKeyOnFloor(i)
+local spFolder = mapFolder:FindFirstChild("SinglePlayer")
+if spFolder then
+	spawnKeysInFolder(spFolder, false)
 end
 
--- Clean up key state when player leaves
-Players.PlayerRemoving:Connect(function(player)
-	-- Attributes clean up automatically with the player
-end)
+local mpFolder = mapFolder:FindFirstChild("Multiplayer")
+if mpFolder then
+	spawnKeysInFolder(mpFolder, true)
+end
 
-print("[KeySystem] Keys spawned for", floorCount, "floors.")
+print("[KeySystem] Key spawning sequence complete.")

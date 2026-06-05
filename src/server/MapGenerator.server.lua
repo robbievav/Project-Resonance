@@ -28,7 +28,7 @@ if not mapFolder then
 	mapFolder.Parent = workspace
 end
 
-print("[MapGenerator] GeneratedMap found with", #mapFolder:GetChildren(), "floors.")
+print("[MapGenerator] GeneratedMap found.")
 
 ---------------------------------------------------------------------------
 -- CREATE REMOTE EVENTS
@@ -62,8 +62,14 @@ local function getPlayerFloor(player)
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return 1 end
 	local y = root.Position.Y
-	local floorIndex = math.floor(-y / MC.FloorSeparation) + 1
-	return math.clamp(floorIndex, 1, MC.FloorsToGenerate)
+	
+	if player:GetAttribute("MultiplayerActive") == true then
+		local floorIndex = math.floor((-y + MC.MultiplayerBaseY) / MC.FloorSeparation) + 1
+		return math.clamp(floorIndex, 1, MC.MultiplayerFloors)
+	else
+		local floorIndex = math.floor(-y / MC.FloorSeparation) + 1
+		return math.clamp(floorIndex, 1, MC.FloorsToGenerate)
+	end
 end
 
 RunService.Heartbeat:Connect(function()
@@ -80,8 +86,10 @@ print("[MapGenerator] Floor tracking active.")
 -- Track which players are mid-transition (prevent spamming)
 local elevatorCooldown = {}
 
-local function findElevatorRoom(floorIndex)
-	local floorFolder = mapFolder:FindFirstChild("Floor_" .. floorIndex)
+local function findElevatorRoom(floorIndex, isMultiplayer)
+	local rootFolder = isMultiplayer and mapFolder:FindFirstChild("Multiplayer") or mapFolder:FindFirstChild("SinglePlayer")
+	if not rootFolder then return nil end
+	local floorFolder = rootFolder:FindFirstChild("Floor_" .. floorIndex)
 	if not floorFolder then return nil end
 	-- Find room tagged as Elevator
 	for _, roomFolder in ipairs(floorFolder:GetChildren()) do
@@ -125,6 +133,7 @@ local function teleportToFloor(player, targetFloor)
 	if not root then elevatorCooldown[player] = nil; return end
 
 	local currentFloor = player:GetAttribute("CurrentFloor") or 1
+	local isMultiplayer = player:GetAttribute("MultiplayerActive") == true
 
 	-- Fire client to show the elevator fade effect
 	local elevUsed = events:FindFirstChild("ElevatorUsed")
@@ -133,22 +142,28 @@ local function teleportToFloor(player, targetFloor)
 	task.wait(1.2)  -- wait for client fade
 
 	-- Find elevator room on target floor
-	local targetRoom = findElevatorRoom(targetFloor)
+	local targetRoom = findElevatorRoom(targetFloor, isMultiplayer)
 	local spawnCF = targetRoom and getElevatorSpawnCFrame(targetRoom)
 
 	if spawnCF then
 		root.CFrame = spawnCF
 	else
-		-- Estimate Y position based on floor separation
-		local estimatedY = -(targetFloor - 1) * MC.FloorSeparation + 5
+		-- Estimate Y position
+		local estimatedY
+		if isMultiplayer then
+			estimatedY = MC.MultiplayerBaseY - (targetFloor - 1) * MC.FloorSeparation + 5
+		else
+			estimatedY = -(targetFloor - 1) * MC.FloorSeparation + 5
+		end
 		root.CFrame = CFrame.new(root.Position.X, estimatedY, root.Position.Z)
 		warn("[MapGenerator] Could not find elevator room on floor", targetFloor, "— used Y estimate.")
 	end
 
 	task.wait(0.3)
 
-	-- Clear the key for the floor they just left — must find a new one each floor
-	player:SetAttribute("KeyFloor_" .. currentFloor, nil)
+	-- Clear key for the floor they just left
+	local keyAttr = isMultiplayer and ("MP_KeyFloor_" .. currentFloor) or ("SP_KeyFloor_" .. currentFloor)
+	player:SetAttribute(keyAttr, nil)
 
 	-- Fade back in
 	if elevUsed then elevUsed:FireClient(player, "FadeIn") end
@@ -158,7 +173,7 @@ local function teleportToFloor(player, targetFloor)
 		elevatorCooldown[player] = nil
 	end)
 
-	print("[MapGenerator]", player.Name, "moved to floor", targetFloor)
+	print("[MapGenerator]", player.Name, "moved to floor", targetFloor, "| Multiplayer:", isMultiplayer)
 end
 
 local function teleportToLobby(player, isVictory)
@@ -195,8 +210,11 @@ local function teleportToLobby(player, isVictory)
 		warn("[MapGenerator] LobbySpawn not found during teleport to lobby!")
 	end
 
-	-- Clear keys and single player status
+	-- Clear keys and active flags
 	player:SetAttribute("SinglePlayerActive", false)
+	player:SetAttribute("MultiplayerActive", false)
+	player:SetAttribute("SP_KeyFloor_" .. currentFloor, nil)
+	player:SetAttribute("MP_KeyFloor_" .. currentFloor, nil)
 	player:SetAttribute("KeyFloor_" .. currentFloor, nil)
 
 	task.wait(0.3)
@@ -220,9 +238,11 @@ local function connectElevatorPanel(panel)
 	prompt.Triggered:Connect(function(player)
 		local currentFloor = player:GetAttribute("CurrentFloor") or 1
 		local targetFloor = currentFloor + 1
+		local isMultiplayer = player:GetAttribute("MultiplayerActive") == true
 
 		-- Check if player has the key for this floor
-		local hasKey = player:GetAttribute("KeyFloor_" .. currentFloor)
+		local keyAttr = isMultiplayer and ("MP_KeyFloor_" .. currentFloor) or ("SP_KeyFloor_" .. currentFloor)
+		local hasKey = player:GetAttribute(keyAttr)
 		if not hasKey then
 			-- Flash a "Find the key first" message to the client
 			local elevUsed = events:FindFirstChild("ElevatorUsed")
@@ -230,7 +250,8 @@ local function connectElevatorPanel(panel)
 			return
 		end
 
-		if targetFloor > MC.FloorsToGenerate then
+		local maxFloors = isMultiplayer and MC.MultiplayerFloors or MC.FloorsToGenerate
+		if targetFloor > maxFloors then
 			-- Escaped the facility (Victory!)
 			teleportToLobby(player, true)
 			return
@@ -264,13 +285,15 @@ end
 CollectionService:GetInstanceAddedSignal("ElevatorPanel"):Connect(connectElevatorPanel)
 CollectionService:GetInstanceAddedSignal("SinglePlayerStartPanel"):Connect(connectSinglePlayerPanel)
 
--- Handle player joining and respawning: ensure SinglePlayerActive = false
+-- Handle player joining and respawning: ensure game states reset
 local function setupPlayer(player)
 	player:SetAttribute("SinglePlayerActive", false)
+	player:SetAttribute("MultiplayerActive", false)
 	player.CharacterAdded:Connect(function(char)
 		player:SetAttribute("SinglePlayerActive", false)
+		player:SetAttribute("MultiplayerActive", false)
 		for name, value in pairs(player:GetAttributes()) do
-			if name:find("KeyFloor_") then
+			if name:find("KeyFloor_") or name:find("SP_KeyFloor_") or name:find("MP_KeyFloor_") then
 				player:SetAttribute(name, nil)
 			end
 		end
@@ -298,7 +321,84 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 ---------------------------------------------------------------------------
--- RUNTIME CLEANUP OF HIDING SPOTS / PROMPTS (Fail-safe for leftover geometry)
+-- MULTIPLAYER CO-OP QUEUE DETECTOR
+---------------------------------------------------------------------------
+task.spawn(function()
+	local countStart = nil
+
+	while true do
+		task.wait(1)
+
+		local pad = CollectionService:GetTagged("MultiplayerCoopPad")[1]
+		local textLabels = CollectionService:GetTagged("MultiplayerCoopTextLabel")
+
+		if pad then
+			local center = pad.Position + Vector3.new(0, 5, 0)
+			local boxSize = Vector3.new(7.6, 10, 5.6)
+			
+			local params = OverlapParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = {}
+			
+			local parts = workspace:GetPartBoundsInBox(CFrame.new(center), boxSize, params)
+			local playersInBox = {}
+			
+			for _, part in ipairs(parts) do
+				local char = part.Parent
+				if char and char:FindFirstChild("Humanoid") then
+					local player = Players:GetPlayerFromCharacter(char)
+					if player and not table.find(playersInBox, player) then
+						table.insert(playersInBox, player)
+					end
+				end
+			end
+			
+			local count = #playersInBox
+			
+			if count < 4 then
+				countStart = nil
+				for _, lbl in ipairs(textLabels) do
+					lbl.Text = "MULTIPLAYER CO-OP\n[" .. count .. "/4 READY]"
+					lbl.TextColor3 = Color3.fromRGB(50, 200, 220)
+				end
+			else
+				if not countStart then
+					countStart = tick()
+				end
+				
+				local elapsed = tick() - countStart
+				local remaining = math.ceil(5 - elapsed)
+				
+				if remaining > 0 then
+					for _, lbl in ipairs(textLabels) do
+						lbl.Text = "MULTIPLAYER CO-OP\n[STARTING IN " .. remaining .. "...]"
+						lbl.TextColor3 = Color3.fromRGB(50, 220, 50)
+					end
+				else
+					for _, lbl in ipairs(textLabels) do
+						lbl.Text = "MULTIPLAYER CO-OP\n[LAUNCHING...]"
+						lbl.TextColor3 = Color3.fromRGB(255, 215, 0)
+					end
+					
+					-- Teleport the 4 players to multiplayer floor 1
+					for i = 1, 4 do
+						local p = playersInBox[i]
+						if p then
+							p:SetAttribute("MultiplayerActive", true)
+							teleportToFloor(p, 1)
+						end
+					end
+					
+					task.wait(2)
+					countStart = nil
+				end
+			end
+		end
+	end
+end)
+
+---------------------------------------------------------------------------
+-- RUNTIME CLEANUP OF HIDING SPOTS / PROMPTS
 ---------------------------------------------------------------------------
 local function cleanHidingElements(parent)
 	for _, desc in ipairs(parent:GetDescendants()) do
@@ -315,7 +415,6 @@ task.spawn(function()
 	task.wait(1)
 	cleanHidingElements(workspace)
 
-	-- Destroy any prompts added dynamically (e.g. cloned from furniture models)
 	workspace.DescendantAdded:Connect(function(desc)
 		if desc:IsA("ProximityPrompt") and (desc.ActionText == "Hide" or desc.ObjectText:find("Hide")) then
 			task.defer(function()

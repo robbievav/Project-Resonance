@@ -53,11 +53,20 @@ local THEMES = {
 	{ Name="Abandoned",     Range={41,50}, WallColor=Color3.fromRGB(65,60,55),    FloorColor=Color3.fromRGB(55,52,48),    WallMat="Slate",     LightMult=0.25 },
 }
 
-local function getTheme(f)
-	for _, t in ipairs(THEMES) do
-		if f >= t.Range[1] and f <= t.Range[2] then return t end
+local function getThemeForFloor(floorIdx, totalFloors)
+	local ratio = 0
+	if totalFloors > 1 then
+		ratio = (floorIdx - 1) / (totalFloors - 1)
 	end
-	return THEMES[1]
+	if ratio < 0.3 then
+		return THEMES[1]
+	elseif ratio < 0.6 then
+		return THEMES[2]
+	elseif ratio < 0.85 then
+		return THEMES[3]
+	else
+		return THEMES[4]
+	end
 end
 
 -- Room Weights (for random selection)
@@ -479,12 +488,11 @@ end
 -- Every room is exactly ROOM_UNIT x ROOM_UNIT (24x24x12).
 -- Doors on all 4 walls, ONLY if connection exists.
 -----------------------------------------------------------------------
-local function buildRoom(template, origin, floorFolder, floorIdx, connections)
+local function buildRoom(template, origin, floorFolder, theme, connections)
 	local sx = ROOM_UNIT
 	local sz = ROOM_UNIT
 	local height = WALL_HEIGHT
 	local thick = WALL_THICKNESS
-	local theme = getTheme(floorIdx)
 	local wallColor = theme.WallColor
 	local wallMat = getMat(theme.WallMat)
 	local lightMult = theme.LightMult
@@ -602,7 +610,7 @@ end
 -----------------------------------------------------------------------
 -- CONNECTOR BUILDER
 -----------------------------------------------------------------------
-local function buildConnector(posA, posB, floorFolder, floorIdx)
+local function buildConnector(posA, posB, floorFolder, theme)
 	local mid = (posA + posB) / 2
 	local diff = posB - posA
 	local len = diff.Magnitude
@@ -610,7 +618,6 @@ local function buildConnector(posA, posB, floorFolder, floorIdx)
 	local height = WALL_HEIGHT
 	local thick = WALL_THICKNESS
 	local hw = HALLWAY_WIDTH
-	local theme = getTheme(floorIdx)
 	local cf = CFrame.lookAt(mid, mid + diff.Unit)
 
 	mp({Name="ConnectorFloor",Size=Vector3.new(hw,thick,len),CFrame=cf*CFrame.new(0,-thick/2,0),Material=Enum.Material.SmoothPlastic,Color=theme.FloorColor,Parent=floorFolder})
@@ -624,16 +631,16 @@ end
 -----------------------------------------------------------------------
 -- FLOOR GENERATOR
 -----------------------------------------------------------------------
-local function generateFloor(floorIdx, rng, mapFolder)
-	local ff = Instance.new("Folder"); ff.Name="Floor_"..floorIdx; ff.Parent=mapFolder
-	local baseY = -(floorIdx - 1) * FLOOR_SEP
-	local halfGrid = (GRID_SIZE - 1) / 2  -- center the grid at X=0, Z=0
+local function generateFloor(floorIdx, rng, parentFolder, gridSize, baseY, totalFloors)
+	local ff = Instance.new("Folder"); ff.Name="Floor_"..floorIdx; ff.Parent=parentFolder
+	local halfGrid = (gridSize - 1) / 2  -- center the grid at X=0, Z=0
+	local theme = getThemeForFloor(floorIdx, totalFloors)
 
 	local cellData = {}
-	for row = 1, GRID_SIZE do
+	for row = 1, gridSize do
 		cellData[row] = {}
-		for col = 1, GRID_SIZE do
-			-- Center the grid: col=1 → left side, col=GRID_SIZE → right side
+		for col = 1, gridSize do
+			-- Center the grid: col=1 → left side, col=gridSize → right side
 			local origin = Vector3.new(
 				(col - 1 - halfGrid) * GRID_SPACING,
 				baseY,
@@ -641,7 +648,7 @@ local function generateFloor(floorIdx, rng, mapFolder)
 			)
 
 			local tName
-			if row == math.ceil(GRID_SIZE/2) and col == math.ceil(GRID_SIZE/2) then
+			if row == math.ceil(gridSize/2) and col == math.ceil(gridSize/2) then
 				tName = "Elevator"
 			else
 				tName = getWeightedRandom(rng)
@@ -655,8 +662,8 @@ local function generateFloor(floorIdx, rng, mapFolder)
 	end
 
 	-- Now build the rooms because we know where neighbors are
-	for row = 1, GRID_SIZE do
-		for col = 1, GRID_SIZE do
+	for row = 1, gridSize do
+		for col = 1, gridSize do
 			local cell = cellData[row][col]
 			if cell then
 				local connections = {
@@ -665,43 +672,38 @@ local function generateFloor(floorIdx, rng, mapFolder)
 					West = cellData[row][col - 1] ~= nil,
 					East = cellData[row][col + 1] ~= nil,
 				}
-				buildRoom(cell.template, cell.origin, ff, floorIdx, connections)
+				buildRoom(cell.template, cell.origin, ff, theme, connections)
 			end
 		end
 	end
 
 	-- Connectors between adjacent rooms
 	local halfRoom = ROOM_UNIT / 2  -- 12 studs from center to wall
-	for row = 1, GRID_SIZE do
-		for col = 1, GRID_SIZE do
+	for row = 1, gridSize do
+		for col = 1, gridSize do
 			if cellData[row][col] then
 				-- Horizontal connector (east)
-				if col < GRID_SIZE and cellData[row][col + 1] then
+				if col < gridSize and cellData[row][col + 1] then
 					local a = cellData[row][col].origin
 					local b = cellData[row][col + 1].origin
 					local edgeA = a + Vector3.new(halfRoom, 0, 0)
 					local edgeB = b - Vector3.new(halfRoom, 0, 0)
 					if (edgeB - edgeA).Magnitude > 1 then
-						buildConnector(edgeA, edgeB, ff, floorIdx)
+						buildConnector(edgeA, edgeB, ff, theme)
 					end
 				end
 				-- Vertical connector (south)
-				if row < GRID_SIZE and cellData[row + 1] and cellData[row + 1][col] then
+				if row < gridSize and cellData[row + 1] and cellData[row + 1][col] then
 					local a = cellData[row][col].origin
 					local b = cellData[row + 1][col].origin
 					local edgeA = a + Vector3.new(0, 0, halfRoom)
 					local edgeB = b - Vector3.new(0, 0, halfRoom)
 					if (edgeB - edgeA).Magnitude > 1 then
-						buildConnector(edgeA, edgeB, ff, floorIdx)
+						buildConnector(edgeA, edgeB, ff, theme)
 					end
 				end
 			end
 		end
-	end
-
-	-- Spawning will occur via lobby elevator teleportation
-	if floorIdx == 1 then
-		print("[Bootstrap] Floor 1 generated. Spawn location will be handled in lobby.")
 	end
 
 	return ff
@@ -729,9 +731,28 @@ local rng = Random.new(actualSeed)
 mapFolder:SetAttribute("Seed", actualSeed)
 print("[Bootstrap] Using seed:", actualSeed)
 
-for floor = 1, FLOORS do
-	generateFloor(floor, rng, mapFolder)
-	print("[Bootstrap] Floor", floor, "built. Theme:", getTheme(floor).Name)
+-- Single Player folder
+local spFolder = Instance.new("Folder")
+spFolder.Name = "SinglePlayer"
+spFolder.Parent = mapFolder
+
+-- Multiplayer folder
+local mpFolder = Instance.new("Folder")
+mpFolder.Name = "Multiplayer"
+mpFolder.Parent = mapFolder
+
+-- Generate Single Player floors (1 to 5, size 5x5, starting at Y = 0)
+for floor = 1, 5 do
+	local baseY = -(floor - 1) * FLOOR_SEP
+	generateFloor(floor, rng, spFolder, 5, baseY, 5)
+	print("[Bootstrap] SinglePlayer Floor", floor, "built. Theme:", getThemeForFloor(floor, 5).Name)
+end
+
+-- Generate Multiplayer floors (1 to 10, size 7x7, starting at Y = -500)
+for floor = 1, 10 do
+	local baseY = -500 - (floor - 1) * FLOOR_SEP
+	generateFloor(floor, rng, mpFolder, 7, baseY, 10)
+	print("[Bootstrap] Multiplayer Floor", floor, "built. Theme:", getThemeForFloor(floor, 10).Name)
 end
 
 -- Define buildLobby inside MAIN or call it
@@ -891,6 +912,9 @@ local function buildLobby(mapFolder)
 			CanCollide = false,
 			Parent = folder
 		})
+		if name == "Coop" then
+			game:GetService("CollectionService"):AddTag(pad, "MultiplayerCoopPad")
+		end
 
 		-- Billboard Gui above elevator opening
 		local board = mp({
@@ -918,6 +942,9 @@ local function buildLobby(mapFolder)
 		lbl.TextStrokeTransparency = 0
 		lbl.Text = titleText
 		lbl.Parent = bb
+		if name == "Coop" then
+			game:GetService("CollectionService"):AddTag(lbl, "MultiplayerCoopTextLabel")
+		end
 
 		if isLocked then
 			-- Locked visual: neon red bars across entrance
@@ -987,7 +1014,7 @@ local function buildLobby(mapFolder)
 	local coopElev = Instance.new("Folder")
 	coopElev.Name = "CoopElevator"
 	coopElev.Parent = lobbyFolder
-	makeElevatorBox(coopElev, "Coop", 0, true, "MULTIPLAYER CO-OP\n[COMING SOON]", Color3.fromRGB(180, 50, 50))
+	makeElevatorBox(coopElev, "Coop", 0, false, "MULTIPLAYER CO-OP\n[0/4 READY]", Color3.fromRGB(50, 200, 220))
 
 	-- Endless Elevator
 	local endlessElev = Instance.new("Folder")

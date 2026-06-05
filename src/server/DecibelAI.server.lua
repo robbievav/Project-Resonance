@@ -2,6 +2,7 @@
 	DecibelAI.server.lua
 	The primary antagonist for Project: Resonance.
 	Phase 2: Multi-floor patrol, difficulty scaling, hiding awareness, door breaking.
+	Refactored to support dual instances (Single Player & Multiplayer Co-op).
 ]]
 
 local RunService         = game:GetService("RunService")
@@ -13,6 +14,7 @@ local TweenService       = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local AC     = Config.AI
+local MC     = Config.Map
 
 ---------------------------------------------------------------------------
 -- WAIT FOR MAP + EVENTS
@@ -88,108 +90,30 @@ local function createEntityModel()
 end
 
 ---------------------------------------------------------------------------
--- AI STATE MACHINE
+-- AI STATE MACHINE DEFINITION
 ---------------------------------------------------------------------------
 local State = {
-	IDLE        = "Idle",
-	PATROL      = "Patrol",
-	INVESTIGATE = "Investigate",
-	CHASE       = "Chase",
-	NEAR_MISS   = "NearMiss",
+	IDLE             = "Idle",
+	PATROL           = "Patrol",
+	INVESTIGATE      = "Investigate",
+	CHASE            = "Chase",
+	NEAR_MISS        = "NearMiss",
 	FLOOR_TRANSITION = "FloorTransition",
 }
 
-local entity = nil
-local currentState = State.IDLE
-local targetPosition = nil
-local lastSoundTime = 0
-local investigateTarget = nil
-local currentFloor = 1
-local lastFloorTransition = 0
-local floorTransitionCooldown = AC.FloorTransitionDelay
-local lastEchoTime = 0
-
 ---------------------------------------------------------------------------
--- DIFFICULTY SCALING
+-- HELPER PROCEDURES
 ---------------------------------------------------------------------------
-local function getDifficultyMult()
-	return 1 + (currentFloor - 1) * AC.DifficultyPerFloor
+local function getRoomGridCell(pos, modeName)
+	local spacing = MC.RoomSpacing or 44
+	local gridSize = (modeName == "Multiplayer") and MC.MultiplayerGridSize or MC.RoomGridSize
+	local halfGrid = (gridSize - 1) / 2
+	local col = math.floor((pos.X + halfGrid * spacing + spacing/2) / spacing) + 1
+	local row = math.floor((pos.Z + halfGrid * spacing + spacing/2) / spacing) + 1
+	return row, col
 end
 
-local function getScaledSpeed(baseSpeed)
-	return baseSpeed * getDifficultyMult()
-end
-
-local function getScaledHearingRadius()
-	return AC.HearingRadius * getDifficultyMult()
-end
-
-local function getScaledLoseInterestTime()
-	return math.max(3, AC.LoseInterestTime / getDifficultyMult())
-end
-
----------------------------------------------------------------------------
--- GET AI'S CURRENT FLOOR
----------------------------------------------------------------------------
-local function getAIFloor()
-	if not entity or not entity.PrimaryPart then return 1 end
-	local y = entity.PrimaryPart.Position.Y
-	local floor = math.floor(-y / Config.Map.FloorSeparation) + 1
-	return math.clamp(floor, 1, Config.Map.FloorsToGenerate)
-end
-
----------------------------------------------------------------------------
--- PATROL: Pick a random walkable position on the current floor
----------------------------------------------------------------------------
-local function getRandomPatrolTarget()
-	local floorName = "Floor_" .. currentFloor
-	local floorFolder = mapFolder:FindFirstChild(floorName)
-	if not floorFolder then return Vector3.new(0, 0, 0) end
-
-	local parts = {}
-	for _, child in ipairs(floorFolder:GetDescendants()) do
-		if child:IsA("BasePart") and child.Name == "Floor" then
-			table.insert(parts, child)
-		end
-	end
-
-	if #parts == 0 then return Vector3.new(0, 0, 0) end
-	local chosen = parts[math.random(1, #parts)]
-	return chosen.Position + Vector3.new(
-		math.random(-5, 5),
-		4,
-		math.random(-5, 5)
-	)
-end
-
----------------------------------------------------------------------------
--- FIND STAIRWELL ON CURRENT FLOOR
----------------------------------------------------------------------------
-local function findStairwell()
-	local floorName = "Floor_" .. currentFloor
-	local floorFolder = mapFolder:FindFirstChild(floorName)
-	if not floorFolder then return nil end
-
-	for _, child in ipairs(floorFolder:GetChildren()) do
-		if child.Name == "Stairwell" then
-			for _, desc in ipairs(child:GetDescendants()) do
-				if desc:IsA("BasePart") and desc.Name == "Floor" then
-					return desc.Position + Vector3.new(0, 4, 0)
-				end
-			end
-		end
-	end
-	return nil
-end
-
-local PathfindingService = game:GetService("PathfindingService")
-local currentPath = nil
-local waypointIndex = 1
-
----------------------------------------------------------------------------
--- MOVE TOWARD TARGET (Using Pathfinding)
----------------------------------------------------------------------------
-local function moveToward(pos)
+local function moveToward(entity, pos)
 	if not entity or not entity.PrimaryPart then return end
 	local humanoid = entity:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
@@ -211,92 +135,26 @@ local function moveToward(pos)
 	if success and path.Status == Enum.PathStatus.Success then
 		local waypoints = path:GetWaypoints()
 		if #waypoints >= 2 then
-			-- Move to the next immediate waypoint (index 2 because 1 is our current spot)
 			local nextPoint = waypoints[2]
 			humanoid:MoveTo(nextPoint.Position)
 			if nextPoint.Action == Enum.PathWaypointAction.Jump then
 				humanoid.Jump = true
 			end
 		else
-			-- We are right next to it, just move directly
 			humanoid:MoveTo(pos)
 		end
 	else
-		-- Fallback to straight line if path fails
 		humanoid:MoveTo(pos)
 	end
 end
 
----------------------------------------------------------------------------
--- FIND LOUDEST SOUND (with scaled hearing radius)
----------------------------------------------------------------------------
-local function getLoudestSound()
-	if not getSoundsFunc then return nil end
-
-	local ok, sounds = pcall(function()
-		return getSoundsFunc:Invoke()
-	end)
-
-	if not ok or not sounds then return nil end
-
-	local loudest = nil
-	local maxVol = 0
-	local hearingRadius = getScaledHearingRadius()
-
-	for _, s in ipairs(sounds) do
-		if s.Volume > maxVol then
-			if entity and entity.PrimaryPart then
-				local dist = (s.Position - entity.PrimaryPart.Position).Magnitude
-				if dist <= hearingRadius then
-					loudest = s
-					maxVol = s.Volume
-				end
-			end
-		end
-	end
-
-	return loudest
-end
-
----------------------------------------------------------------------------
--- CHECK FOR NEARBY PLAYERS (hiding-aware)
----------------------------------------------------------------------------
-local function getNearestPlayer()
-	if not entity or not entity.PrimaryPart then return nil, math.huge end
-
-	local nearest = nil
-	local nearestDist = math.huge
-
-	for _, plr in ipairs(Players:GetPlayers()) do
-		local char = plr.Character
-		if char then
-			local root = char:FindFirstChild("HumanoidRootPart")
-			if root then
-				local dist = (root.Position - entity.PrimaryPart.Position).Magnitude
-				if dist < nearestDist then
-					nearest = plr
-					nearestDist = dist
-				end
-			end
-		end
-	end
-
-	return nearest, nearestDist
-end
-
----------------------------------------------------------------------------
--- DOOR BREAKING (Chase state)
----------------------------------------------------------------------------
-local function tryBreakNearbyDoor()
-	if not entity or not entity.PrimaryPart then return end
-
+local function tryBreakNearbyDoor(entity, modeFolder)
+	if not entity or not entity.PrimaryPart or not modeFolder then return end
 	local pos = entity.PrimaryPart.Position
-	-- Check for closed doors within reach
-	for _, desc in ipairs(mapFolder:GetDescendants()) do
+	for _, desc in ipairs(modeFolder:GetDescendants()) do
 		if desc:IsA("BasePart") and desc.Name == "Door" and desc.CanCollide then
 			local dist = (desc.Position - pos).Magnitude
 			if dist < 8 then
-				-- Break the door!
 				task.spawn(function()
 					task.wait(AC.DoorBreakTime)
 					if desc and desc.Parent then
@@ -306,16 +164,16 @@ local function tryBreakNearbyDoor()
 						end
 					end
 				end)
-				return  -- only break one door at a time
+				return
 			end
 		end
 	end
 end
 
-local function tryOpenNearbyDoorNormally()
-	if not entity or not entity.PrimaryPart then return end
+local function tryOpenNearbyDoorNormally(entity, modeFolder)
+	if not entity or not entity.PrimaryPart or not modeFolder then return end
 	local pos = entity.PrimaryPart.Position
-	for _, desc in ipairs(mapFolder:GetDescendants()) do
+	for _, desc in ipairs(modeFolder:GetDescendants()) do
 		if desc:IsA("BasePart") and desc.Name == "Door" and desc.CanCollide then
 			local dist = (desc.Position - pos).Magnitude
 			if dist < 8 then
@@ -328,35 +186,156 @@ local function tryOpenNearbyDoorNormally()
 	end
 end
 
-local function getRoomGridCell(pos)
-	local spacing = Config.Map.RoomSpacing or 44
-	local halfGrid = (Config.Map.RoomGridSize - 1) / 2
-	local col = math.floor((pos.X + halfGrid * spacing + spacing/2) / spacing) + 1
-	local row = math.floor((pos.Z + halfGrid * spacing + spacing/2) / spacing) + 1
-	return row, col
+---------------------------------------------------------------------------
+-- DECIBEL CLASS
+---------------------------------------------------------------------------
+local DecibelAI = {}
+DecibelAI.__index = DecibelAI
+
+function DecibelAI.new(modeName, maxFloors, baseY, activeAttributeName)
+	local self = setmetatable({}, DecibelAI)
+	self.modeName = modeName
+	self.maxFloors = maxFloors
+	self.baseY = baseY
+	self.activeAttributeName = activeAttributeName
+	self.modeFolder = mapFolder:FindFirstChild(modeName)
+	
+	self.entity = nil
+	self.currentState = State.IDLE
+	self.targetPosition = nil
+	self.lastSoundTime = 0
+	self.investigateTarget = nil
+	self.currentFloor = 1
+	self.lastFloorTransition = 0
+	self.lastEchoTime = 0
+	
+	return self
 end
 
-local function performEcholocation(player)
+function DecibelAI:getAIFloor()
+	if not self.entity or not self.entity.PrimaryPart then return 1 end
+	local y = self.entity.PrimaryPart.Position.Y
+	local floor
+	if self.modeName == "Multiplayer" then
+		floor = math.floor((-y + MC.MultiplayerBaseY) / MC.FloorSeparation) + 1
+	else
+		floor = math.floor(-y / MC.FloorSeparation) + 1
+	end
+	return math.clamp(floor, 1, self.maxFloors)
+end
+
+function DecibelAI:getRandomPatrolTarget()
+	local floorFolder = self.modeFolder and self.modeFolder:FindFirstChild("Floor_" .. self.currentFloor)
+	if not floorFolder then return Vector3.new(0, 0, 0) end
+
+	local parts = {}
+	for _, child in ipairs(floorFolder:GetDescendants()) do
+		if child:IsA("BasePart") and child.Name == "Floor" then
+			table.insert(parts, child)
+		end
+	end
+
+	if #parts == 0 then return Vector3.new(0, 0, 0) end
+	local chosen = parts[math.random(1, #parts)]
+	return chosen.Position + Vector3.new(
+		math.random(-5, 5),
+		4,
+		math.random(-5, 5)
+	)
+end
+
+function DecibelAI:getDifficultyMult()
+	return 1 + (self.currentFloor - 1) * AC.DifficultyPerFloor
+end
+
+function DecibelAI:getScaledSpeed(baseSpeed)
+	return baseSpeed * self:getDifficultyMult()
+end
+
+function DecibelAI:getScaledHearingRadius()
+	return AC.HearingRadius * self:getDifficultyMult()
+end
+
+function DecibelAI:getScaledLoseInterestTime()
+	return math.max(3, AC.LoseInterestTime / self:getDifficultyMult())
+end
+
+function DecibelAI:getLoudestSound()
+	if not getSoundsFunc then return nil end
+
+	local ok, sounds = pcall(function()
+		return getSoundsFunc:Invoke()
+	end)
+
+	if not ok or not sounds then return nil end
+
+	local loudest = nil
+	local maxVol = 0
+	local hearingRadius = self:getScaledHearingRadius()
+
+	for _, s in ipairs(sounds) do
+		if s.Volume > maxVol then
+			if self.entity and self.entity.PrimaryPart then
+				local dist = (s.Position - self.entity.PrimaryPart.Position).Magnitude
+				if dist <= hearingRadius then
+					-- Segregate sounds vertically: make sure we are on the same vertical mode plane
+					local yDiff = math.abs(s.Position.Y - self.entity.PrimaryPart.Position.Y)
+					if yDiff < 100 then
+						loudest = s
+						maxVol = s.Volume
+					end
+				end
+			end
+		end
+	end
+
+	return loudest
+end
+
+function DecibelAI:getNearestPlayer()
+	if not self.entity or not self.entity.PrimaryPart then return nil, math.huge end
+
+	local nearest = nil
+	local nearestDist = math.huge
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr:GetAttribute(self.activeAttributeName) == true then
+			local char = plr.Character
+			if char then
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if root then
+					local dist = (root.Position - self.entity.PrimaryPart.Position).Magnitude
+					if dist < nearestDist then
+						nearest = plr
+						nearestDist = dist
+					end
+				end
+			end
+		end
+	end
+
+	return nearest, nearestDist
+end
+
+function DecibelAI:performEcholocation(player)
 	local char = player.Character
-	if not char or not entity or not entity.PrimaryPart then return end
+	if not char or not self.entity or not self.entity.PrimaryPart then return end
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	local torso = entity.PrimaryPart
+	local torso = self.entity.PrimaryPart
 
-	-- Play sonar sound
 	local sonarSound = torso:FindFirstChild("SonarSound")
 	if not sonarSound then
 		sonarSound = Instance.new("Sound")
 		sonarSound.Name = "SonarSound"
-		sonarSound.SoundId = "rbxassetid://9114234894" -- placeholder
+		sonarSound.SoundId = "rbxassetid://9114234894"
 		sonarSound.Volume = 1
 		sonarSound.RollOffMaxDistance = 120
 		sonarSound.Parent = torso
 	end
 	sonarSound:Play()
 
-	-- Expanding neon ping ring effect in workspace
 	task.spawn(function()
 		local ring = Instance.new("Part")
 		ring.Name = "EchoRing"
@@ -380,12 +359,10 @@ local function performEcholocation(player)
 		ring:Destroy()
 	end)
 
-	-- Direct AI focus to player's location
-	investigateTarget = root.Position
-	currentState = State.INVESTIGATE
-	lastSoundTime = tick()
+	self.investigateTarget = root.Position
+	self.currentState = State.INVESTIGATE
+	self.lastSoundTime = tick()
 
-	-- Warn local client
 	if AIAlertEvent then
 		AIAlertEvent:FireClient(player, {
 			Type = "Echolocation",
@@ -394,159 +371,154 @@ local function performEcholocation(player)
 	end
 end
 
----------------------------------------------------------------------------
--- AI TICK
----------------------------------------------------------------------------
-local function aiTick()
-	if not entity or not entity.PrimaryPart then return end
-	local humanoid = entity:FindFirstChildOfClass("Humanoid")
+function DecibelAI:tick()
+	if not self.entity or not self.entity.PrimaryPart then return end
+	local humanoid = self.entity:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
 
-	if currentState == State.FLOOR_TRANSITION then return end
+	if self.currentState == State.FLOOR_TRANSITION then return end
 
-	-- Update AI's current floor
-	currentFloor = getAIFloor()
-	entity:SetAttribute("CurrentFloor", currentFloor)
+	self.currentFloor = self:getAIFloor()
+	self.entity:SetAttribute("CurrentFloor", self.currentFloor)
 
-	local loudest = getLoudestSound()
-	local nearestPlayer, nearestDist = getNearestPlayer()
+	local loudest = self:getLoudestSound()
+	local nearestPlayer, nearestDist = self:getNearestPlayer()
 
-	-- State transitions based on sound (with progressive difficulty scaling)
 	if loudest then
-		lastSoundTime = tick()
-		investigateTarget = loudest.Position
+		self.lastSoundTime = tick()
+		self.investigateTarget = loudest.Position
 
-		-- Progressive floor difficulty: Direct chase triggers on quieter noises at deeper levels
-		local chaseThreshold = math.max(0.1, Config.SoundLevels.Run - (currentFloor - 1) * 0.25)
+		local chaseThreshold = math.max(0.1, Config.SoundLevels.Run - (self.currentFloor - 1) * 0.25)
 
 		if loudest.Volume >= chaseThreshold then
-			currentState = State.CHASE
-			humanoid.WalkSpeed = getScaledSpeed(AC.ChaseSpeed)
+			self.currentState = State.CHASE
+			humanoid.WalkSpeed = self:getScaledSpeed(AC.ChaseSpeed)
 		else
-			currentState = State.INVESTIGATE
-			humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed + 4)
+			self.currentState = State.INVESTIGATE
+			humanoid.WalkSpeed = self:getScaledSpeed(AC.PatrolSpeed + 4)
 		end
 	end
 
 	-- Same-room Echolocation check
 	if nearestPlayer then
 		local playerFloor = nearestPlayer:GetAttribute("CurrentFloor") or 1
-		if playerFloor == currentFloor then
+		if playerFloor == self.currentFloor then
 			local playerChar = nearestPlayer.Character
 			local playerRoot = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
 			if playerRoot then
-				local aRow, aCol = getRoomGridCell(entity.PrimaryPart.Position)
-				local pRow, pCol = getRoomGridCell(playerRoot.Position)
+				local aRow, aCol = getRoomGridCell(self.entity.PrimaryPart.Position, self.modeName)
+				local pRow, pCol = getRoomGridCell(playerRoot.Position, self.modeName)
 
 				if aRow == pRow and aCol == pCol then
-					if tick() - lastEchoTime > (AC.EchoInterval or 4) then
-						lastEchoTime = tick()
-						performEcholocation(nearestPlayer)
+					if tick() - self.lastEchoTime > (AC.EchoInterval or 4) then
+						self.lastEchoTime = tick()
+						self:performEcholocation(nearestPlayer)
 					end
 				end
 			end
 		end
 	end
 
-	-- Lose interest timeout (scaled by difficulty)
-	if currentState == State.INVESTIGATE or currentState == State.CHASE then
-		if tick() - lastSoundTime > getScaledLoseInterestTime() then
-			currentState = State.PATROL
-			humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed)
-			investigateTarget = nil
+	-- Lose interest timeout
+	if self.currentState == State.INVESTIGATE or self.currentState == State.CHASE then
+		if tick() - self.lastSoundTime > self:getScaledLoseInterestTime() then
+			self.currentState = State.PATROL
+			humanoid.WalkSpeed = self:getScaledSpeed(AC.PatrolSpeed)
+			self.investigateTarget = nil
 		end
 	end
 
 	-- Execute state behavior
-	if currentState ~= State.CHASE then
-		tryOpenNearbyDoorNormally()
+	if self.currentState ~= State.CHASE then
+		tryOpenNearbyDoorNormally(self.entity, self.modeFolder)
 	end
 
-	if currentState == State.PATROL then
-		if not targetPosition or (entity.PrimaryPart.Position - targetPosition).Magnitude < 5 then
-			targetPosition = getRandomPatrolTarget()
+	if self.currentState == State.PATROL then
+		if not self.targetPosition or (self.entity.PrimaryPart.Position - self.targetPosition).Magnitude < 5 then
+			self.targetPosition = self:getRandomPatrolTarget()
 		end
-		moveToward(targetPosition)
+		moveToward(self.entity, self.targetPosition)
 
-		-- Floor transition: periodically change floors to follow player
-		if tick() - lastFloorTransition > floorTransitionCooldown then
+		-- Floor transition logic
+		if tick() - self.lastFloorTransition > AC.FloorTransitionDelay then
 			if math.random() < 0.3 then
-				local targetFloor = currentFloor
+				local targetFloor = self.currentFloor
 				for _, plr in ipairs(Players:GetPlayers()) do
-					local pFloor = plr:GetAttribute("CurrentFloor") or 1
-					if math.abs(pFloor - currentFloor) >= 1 then
-						targetFloor = pFloor
-						break
+					if plr:GetAttribute(self.activeAttributeName) == true then
+						local pFloor = plr:GetAttribute("CurrentFloor") or 1
+						if math.abs(pFloor - self.currentFloor) >= 1 then
+							targetFloor = pFloor
+							break
+						end
 					end
 				end
 
-				if targetFloor ~= currentFloor then
-					currentState = State.FLOOR_TRANSITION
-					lastFloorTransition = tick()
+				if targetFloor ~= self.currentFloor then
+					self.currentState = State.FLOOR_TRANSITION
+					self.lastFloorTransition = tick()
+					
 					task.spawn(function()
-						if not entity or not entity.PrimaryPart then return end
+						if not self.entity or not self.entity.PrimaryPart then return end
 						
 						-- Fade out parts
-						for _, p in ipairs(entity:GetDescendants()) do
+						for _, p in ipairs(self.entity:GetDescendants()) do
 							if p:IsA("BasePart") then
 								TweenService:Create(p, TweenInfo.new(1.0), {Transparency = 1}):Play()
 							end
 						end
 						
 						task.wait(1.0)
-						if not entity or not entity.PrimaryPart then return end
+						if not self.entity or not self.entity.PrimaryPart then return end
 						
 						-- Teleport to new floor
-						currentFloor = targetFloor
-						local spawnPos = getRandomPatrolTarget()
-						entity:SetPrimaryPartCFrame(CFrame.new(spawnPos))
-						entity:SetAttribute("CurrentFloor", currentFloor)
+						self.currentFloor = targetFloor
+						local spawnPos = self:getRandomPatrolTarget()
+						self.entity:PivotTo(CFrame.new(spawnPos))
+						self.entity:SetAttribute("CurrentFloor", self.currentFloor)
 						
 						task.wait(0.5)
-						if not entity or not entity.PrimaryPart then return end
+						if not self.entity or not self.entity.PrimaryPart then return end
 						
 						-- Fade in parts
-						for _, p in ipairs(entity:GetDescendants()) do
+						for _, p in ipairs(self.entity:GetDescendants()) do
 							if p:IsA("BasePart") then
-								local targetTrans = (p.Name == "Eye" and 0) or (p.Name == "HumanoidRootPart" and 0) or 0
-								TweenService:Create(p, TweenInfo.new(1.0), {Transparency = targetTrans}):Play()
+								TweenService:Create(p, TweenInfo.new(1.0), {Transparency = 0}):Play()
 							end
 						end
 						
 						task.wait(1.0)
-						if currentState == State.FLOOR_TRANSITION then
-							currentState = State.PATROL
-							humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed)
+						if self.currentState == State.FLOOR_TRANSITION then
+							self.currentState = State.PATROL
+							humanoid.WalkSpeed = self:getScaledSpeed(AC.PatrolSpeed)
 						end
 					end)
 				end
 			end
-			lastFloorTransition = tick()
+			self.lastFloorTransition = tick()
 		end
 
-	elseif currentState == State.INVESTIGATE then
-		if investigateTarget then
-			moveToward(investigateTarget)
+	elseif self.currentState == State.INVESTIGATE then
+		if self.investigateTarget then
+			moveToward(self.entity, self.investigateTarget)
 
 			-- Near-miss check
 			if nearestDist < AC.NearMissRadius and not loudest then
-				currentState = State.NEAR_MISS
+				self.currentState = State.NEAR_MISS
 				if nearestPlayer and AIAlertEvent then
 					AIAlertEvent:FireClient(nearestPlayer, {
 						Type = "NearMiss",
-						Position = entity.PrimaryPart.Position,
+						Position = self.entity.PrimaryPart.Position,
 					})
 				end
 			end
 		end
 
-	elseif currentState == State.CHASE then
-		if investigateTarget then
-			moveToward(investigateTarget)
+	elseif self.currentState == State.CHASE then
+		if self.investigateTarget then
+			moveToward(self.entity, self.investigateTarget)
 		end
 
-		-- Try to break doors in the way
-		tryBreakNearbyDoor()
+		tryBreakNearbyDoor(self.entity, self.modeFolder)
 
 		-- Kill check
 		if nearestDist < 4 then
@@ -561,19 +533,19 @@ local function aiTick()
 			end
 		end
 
-	elseif currentState == State.NEAR_MISS then
+	elseif self.currentState == State.NEAR_MISS then
 		if nearestPlayer and nearestPlayer.Character then
 			local playerPos = nearestPlayer.Character:FindFirstChild("HumanoidRootPart")
 			if playerPos then
-				local awayDir = (entity.PrimaryPart.Position - playerPos.Position).Unit
-				targetPosition = entity.PrimaryPart.Position + awayDir * 30
-				moveToward(targetPosition)
+				local awayDir = (self.entity.PrimaryPart.Position - playerPos.Position).Unit
+				self.targetPosition = self.entity.PrimaryPart.Position + awayDir * 30
+				moveToward(self.entity, self.targetPosition)
 			end
 		end
 		task.delay(1.5, function()
-			if currentState == State.NEAR_MISS then
-				currentState = State.PATROL
-				humanoid.WalkSpeed = getScaledSpeed(AC.PatrolSpeed)
+			if self.currentState == State.NEAR_MISS then
+				self.currentState = State.PATROL
+				humanoid.WalkSpeed = self:getScaledSpeed(AC.PatrolSpeed)
 			end
 		end)
 
@@ -581,35 +553,31 @@ local function aiTick()
 end
 
 ---------------------------------------------------------------------------
--- SPAWN AND MAIN LOOP
+-- RUN STATE MACHINE LOOPS
 ---------------------------------------------------------------------------
-local function start()
+local function runAILoop(aiInstance)
 	while true do
 		task.wait(1)
 
-		-- Find if there is any active single-player player
 		local activePlayer = nil
 		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr:GetAttribute("SinglePlayerActive") == true then
+			if plr:GetAttribute(aiInstance.activeAttributeName) == true then
 				activePlayer = plr
 				break
 			end
 		end
 
 		if activePlayer then
-			if not entity then
-				-- Player entered single player mode and AI is not spawned yet!
-				print("[DecibelAI] Active player found in single-player mode. Starting spawn delay...")
+			if not aiInstance.entity then
+				print("[DecibelAI] Active player found in " .. aiInstance.modeName .. ". Starting spawn delay...")
 				
-				-- Spawn delay countdown
 				local startTime = tick()
 				local delayAborted = false
 				while tick() - startTime < AC.SpawnDelay do
 					task.wait(0.5)
-					-- Check if the player is still active
 					local stillActive = false
 					for _, plr in ipairs(Players:GetPlayers()) do
-						if plr:GetAttribute("SinglePlayerActive") == true then
+						if plr:GetAttribute(aiInstance.activeAttributeName) == true then
 							stillActive = true
 							break
 						end
@@ -621,58 +589,67 @@ local function start()
 				end
 
 				if not delayAborted then
-					-- Spawning the AI!
-					entity = createEntityModel()
+					aiInstance.entity = createEntityModel()
+					aiInstance.entity.Name = "TheDecibel_" .. aiInstance.modeName
 
-					-- Set initial floor from the active player's floor
-					currentFloor = activePlayer:GetAttribute("CurrentFloor") or 1
-					entity:SetAttribute("CurrentFloor", currentFloor)
+					aiInstance.currentFloor = activePlayer:GetAttribute("CurrentFloor") or 1
+					aiInstance.entity:SetAttribute("CurrentFloor", aiInstance.currentFloor)
 
-					local spawnPos = getRandomPatrolTarget()
-					entity:SetPrimaryPartCFrame(CFrame.new(spawnPos))
-					entity.Parent = workspace
+					local spawnPos = aiInstance:getRandomPatrolTarget()
+					aiInstance.entity:PivotTo(CFrame.new(spawnPos))
+					aiInstance.entity.Parent = workspace
 
-					currentState = State.PATROL
-					lastFloorTransition = tick()
-					print("[DecibelAI] The Decibel has spawned on floor", currentFloor, "| Difficulty:", string.format("%.1fx", getDifficultyMult()))
+					aiInstance.currentState = State.PATROL
+					aiInstance.lastFloorTransition = tick()
+					print("[DecibelAI] " .. aiInstance.entity.Name .. " spawned on floor " .. aiInstance.currentFloor)
 
-					-- Run AI tick loop as long as there is an active single-player player
-					while entity and entity.Parent do
-						-- Check if we still have any active player
+					while aiInstance.entity and aiInstance.entity.Parent do
 						local hasActive = false
 						for _, plr in ipairs(Players:GetPlayers()) do
-							if plr:GetAttribute("SinglePlayerActive") == true then
+							if plr:GetAttribute(aiInstance.activeAttributeName) == true then
 								hasActive = true
 								break
 							end
 						end
 
 						if not hasActive then
-							-- No active players left (victory or death), despawn AI!
-							print("[DecibelAI] No active single-player players left. Despawning...")
-							entity:Destroy()
-							entity = nil
-							currentState = State.IDLE
+							print("[DecibelAI] No active " .. aiInstance.modeName .. " players left. Despawning...")
+							aiInstance.entity:Destroy()
+							aiInstance.entity = nil
+							aiInstance.currentState = State.IDLE
 							break
 						end
 
-						aiTick()
+						aiInstance:tick()
 						task.wait(0.3)
 					end
 				else
-					print("[DecibelAI] Spawn delay aborted (player left single-player mode).")
+					print("[DecibelAI] Spawn delay aborted for " .. aiInstance.modeName)
 				end
 			end
 		else
-			-- No active player and AI is somehow still active, clean it up just in case
-			if entity then
-				print("[DecibelAI] Fail-safe: Despawning entity because no active players exist.")
-				entity:Destroy()
-				entity = nil
-				currentState = State.IDLE
+			if aiInstance.entity then
+				print("[DecibelAI] Fail-safe: Despawning " .. aiInstance.modeName .. " Decibel.")
+				aiInstance.entity:Destroy()
+				aiInstance.entity = nil
+				aiInstance.currentState = State.IDLE
 			end
 		end
 	end
 end
 
-start()
+---------------------------------------------------------------------------
+-- INITIALIZATION
+---------------------------------------------------------------------------
+local singlePlayerAI = DecibelAI.new("SinglePlayer", MC.FloorsToGenerate, 0, "SinglePlayerActive")
+local multiplayerAI = DecibelAI.new("Multiplayer", MC.MultiplayerFloors, MC.MultiplayerBaseY, "MultiplayerActive")
+
+task.spawn(function()
+	runAILoop(singlePlayerAI)
+end)
+
+task.spawn(function()
+	runAILoop(multiplayerAI)
+end)
+
+print("[DecibelAI] Dual AI loops active.")

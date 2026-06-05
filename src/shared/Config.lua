@@ -12,6 +12,9 @@ Config.Map = {
 	Seed             = 0,          -- 0 = random seed each round
 	FloorsToGenerate = 5,          -- 5 floors for Single Player mode
 	RoomGridSize     = 5,          -- NxN grid of rooms per floor
+	MultiplayerFloors = 10,        -- 10 floors for Multiplayer mode
+	MultiplayerGridSize = 7,       -- 7x7 grid of rooms per floor
+	MultiplayerBaseY = -500,       -- Starting Y offset for Multiplayer floors
 	RoomUnit         = 36,         -- studs per room tile
 	HallwayWidth     = 8,          -- studs
 	WallHeight       = 12,         -- studs
