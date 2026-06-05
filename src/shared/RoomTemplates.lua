@@ -145,11 +145,12 @@ RoomTemplates.YellowOffice = {
 	Doors = { door("NegZ", 0) },
 	Fixtures = { fixture("FluorescentLight", -4, 11.5, -4), fixture("FluorescentLight", 4, 11.5, 4) },
 	Furniture = {
-		fixture("PartitionWall", -4, 0, 0, 90),
-		fixture("PartitionWall", 4, 0, 4, 0),
+		fixture("PartitionWall", -4, 0, -4, 0),
+		fixture("PartitionWall", 2, 0, 2, 90),
+		fixture("PartitionWall", 8, 0, -4, 0),
 		fixture("Desk", -8, 0, -8, 90),
 		fixture("Chair", -5, 0, -8, -90),
-		fixture("FilingCabinet", 8, 0, -8, 180)
+		fixture("FilingCabinet", 12, 0, -8, 180)
 	},
 	HidingSpots = {},
 }

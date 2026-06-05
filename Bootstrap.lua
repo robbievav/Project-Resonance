@@ -253,11 +253,12 @@ ROOMS.YellowOffice = {
 	CeilCol=Color3.fromRGB(185, 185, 170),
 	Fixtures={fix("Fluor",-6,11.5,-6), fix("Fluor",6,11.5,6)},
 	Furniture={
-		{ Type="PartitionWall", Offset=Vector3.new(-4,0,0), Rotation=90 },
-		{ Type="PartitionWall", Offset=Vector3.new(4,0,4), Rotation=0 },
+		{ Type="PartitionWall", Offset=Vector3.new(-4,0,-4), Rotation=0 },
+		{ Type="PartitionWall", Offset=Vector3.new(2,0,2), Rotation=90 },
+		{ Type="PartitionWall", Offset=Vector3.new(8,0,-4), Rotation=0 },
 		fix("Desk",-8,0,-8,90),
 		fix("Chair",-5,0,-8,-90),
-		fix("FileCab",8,0,-8,180),
+		fix("FileCab",12,0,-8,180),
 	},
 	HidingSpots={},
 }
