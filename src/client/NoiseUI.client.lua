@@ -21,13 +21,15 @@ gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Glassmorphic container panel
+-- Glassmorphic container panel (Vertical on the right)
 local panel = Instance.new("Frame")
 panel.Name = "NoisePanel"
-panel.Size = UDim2.new(0.22, 0, 0.05, 0)
-panel.Position = UDim2.new(0.39, 0, 0.91, 0)
+panel.Size = UDim2.new(0.035, 0, 0.32, 0)
+panel.Position = UDim2.new(0.945, 0, 0.34, 0)
 panel.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 panel.BackgroundTransparency = 0.25
 panel.BorderSizePixel = 0
+panel.AnchorPoint = Vector2.new(0.5, 0)
 panel.Parent = gui
 
 local panelCorner = Instance.new("UICorner")
@@ -41,11 +43,11 @@ panelStroke.Thickness = 1.5
 panelStroke.Transparency = 0.5
 panelStroke.Parent = panel
 
--- Noise Bar Track (Background)
+-- Noise Bar Track (Vertical Background)
 local track = Instance.new("Frame")
 track.Name = "Track"
-track.Size = UDim2.new(0.9, 0, 0.25, 0)
-track.Position = UDim2.new(0.05, 0, 0.55, 0)
+track.Size = UDim2.new(0.22, 0, 0.72, 0)
+track.Position = UDim2.new(0.39, 0, 0.14, 0)
 track.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 track.BorderSizePixel = 0
 track.Parent = panel
@@ -54,11 +56,12 @@ local trackCorner = Instance.new("UICorner")
 trackCorner.CornerRadius = UDim.new(0, 4)
 trackCorner.Parent = track
 
--- Neon Glow effect (behind the fill)
+-- Neon Glow effect (behind the fill, vertical from bottom)
 local glow = Instance.new("Frame")
 glow.Name = "Glow"
-glow.Size = UDim2.new(0, 0, 1.4, 0)
-glow.Position = UDim2.new(0, 0, -0.2, 0)
+glow.Size = UDim2.new(1.4, 0, 0, 0)
+glow.Position = UDim2.new(0.5, 0, 1, 0)
+glow.AnchorPoint = Vector2.new(0.5, 1)
 glow.BackgroundColor3 = Color3.fromRGB(50, 180, 120)
 glow.BackgroundTransparency = 0.6
 glow.BorderSizePixel = 0
@@ -69,10 +72,12 @@ local glowCorner = Instance.new("UICorner")
 glowCorner.CornerRadius = UDim.new(0, 6)
 glowCorner.Parent = glow
 
--- Active Fill Bar
+-- Active Fill Bar (Vertical from bottom)
 local fill = Instance.new("Frame")
 fill.Name = "Fill"
-fill.Size = UDim2.new(0, 0, 1, 0)
+fill.Size = UDim2.new(1, 0, 0, 0)
+fill.Position = UDim2.new(0, 0, 1, 0)
+fill.AnchorPoint = Vector2.new(0, 1)
 fill.BackgroundColor3 = Color3.fromRGB(50, 180, 120)
 fill.BorderSizePixel = 0
 fill.Parent = track
@@ -81,26 +86,40 @@ local fillCorner = Instance.new("UICorner")
 fillCorner.CornerRadius = UDim.new(0, 4)
 fillCorner.Parent = fill
 
--- Add subtle gradient to fill
+-- Add subtle gradient to fill (vertical direction: rotation 270)
 local fillGradient = Instance.new("UIGradient")
 fillGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 240, 180)),
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 180, 120))
 })
+fillGradient.Rotation = 270
 fillGradient.Parent = fill
 
--- Dynamic HUD Label
+-- Static HUD Label
 local label = Instance.new("TextLabel")
 label.Name = "Label"
-label.Size = UDim2.new(0.9, 0, 0.35, 0)
-label.Position = UDim2.new(0.05, 0, 0.12, 0)
+label.Size = UDim2.new(1, 0, 0.08, 0)
+label.Position = UDim2.new(0, 0, 0.03, 0)
 label.BackgroundTransparency = 1
-label.Text = "DECIBEL EMISSION : CLEAR"
+label.Text = "NOISE"
 label.TextColor3 = Color3.fromRGB(180, 185, 190)
-label.Font = Enum.Font.GothamMedium
-label.TextSize = 10
-label.TextXAlignment = Enum.TextXAlignment.Left
+label.Font = Enum.Font.GothamBold
+label.TextSize = 9
+label.TextXAlignment = Enum.TextXAlignment.Center
 label.Parent = panel
+
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(0.9, 0, 0.08, 0)
+statusLabel.Position = UDim2.new(0.05, 0, 0.89, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "SILENT"
+statusLabel.TextColor3 = Color3.fromRGB(150, 220, 180)
+statusLabel.Font = Enum.Font.GothamMedium
+statusLabel.TextSize = 8
+statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+statusLabel.Parent = panel
 
 ---------------------------------------------------------------------------
 -- ANIMATION LOOP
@@ -135,14 +154,14 @@ RunService.RenderStepped:Connect(function(dt)
 
 	-- Update Bar Sizes (clamped 0 to 1)
 	local fillScale = math.clamp(lerpedNoise, 0, 1)
-	fill.Size = UDim2.new(fillScale, 0, 1, 0)
-	glow.Size = UDim2.new(math.max(0, fillScale - 0.02), 0, 1.4, 0)
+	fill.Size = UDim2.new(1, 0, fillScale, 0)
+	glow.Size = UDim2.new(1.4, 0, math.max(0, fillScale - 0.02), 0)
 
 	-- Harmonious Color & Text Scaling based on current Noise State
 	if fillScale > 0.6 then
 		-- Danger / Sprint
-		label.Text = "DECIBEL EMISSION : CRITICAL WARNING"
-		label.TextColor3 = Color3.fromRGB(240, 100, 100)
+		statusLabel.Text = "ALERT"
+		statusLabel.TextColor3 = Color3.fromRGB(240, 100, 100)
 		fillGradient.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 120)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 60, 60))
@@ -151,8 +170,8 @@ RunService.RenderStepped:Connect(function(dt)
 		panelStroke.Color = Color3.fromRGB(240, 100, 100)
 	elseif fillScale > 0.15 then
 		-- Walk
-		label.Text = "DECIBEL EMISSION : STEALTH COMPROMISED"
-		label.TextColor3 = Color3.fromRGB(240, 200, 110)
+		statusLabel.Text = "STEALTH"
+		statusLabel.TextColor3 = Color3.fromRGB(240, 200, 110)
 		fillGradient.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 230, 140)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 160, 50))
@@ -161,8 +180,8 @@ RunService.RenderStepped:Connect(function(dt)
 		panelStroke.Color = Color3.fromRGB(210, 160, 50)
 	else
 		-- Idle / Crouch
-		label.Text = fillScale > 0.01 and "DECIBEL EMISSION : COMPRESSED STEALTH" or "DECIBEL EMISSION : ABSOLUTE SILENCE"
-		label.TextColor3 = Color3.fromRGB(150, 220, 180)
+		statusLabel.Text = fillScale > 0.01 and "STEALTH" or "SILENT"
+		statusLabel.TextColor3 = Color3.fromRGB(150, 220, 180)
 		fillGradient.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 240, 180)),
 			ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 180, 120))

@@ -15,6 +15,60 @@
     "ServerStorage": {
       "Assets": {
         "$path": "assets"
+      },
+      "DecibelTracker": {
+        "$className": "Tool",
+        "$properties": {
+          "RequiresHandle": true
+        },
+        "Handle": {
+          "$className": "Part",
+          "$properties": {
+            "Size": [1.2, 0.8, 0.4],
+            "Color": [40, 42, 45],
+            "Material": "Metal",
+            "Anchored": false
+          }
+        },
+        "Screen": {
+          "$className": "Part",
+          "$properties": {
+            "Size": [0.8, 0.6, 0.05],
+            "Color": [10, 30, 10],
+            "Material": "Glass",
+            "Anchored": false
+          }
+        },
+        "RadarScript": {
+          "$path": "src/client/RadarScript.client.lua"
+        }
+      },
+      "KeyTracker": {
+        "$className": "Tool",
+        "$properties": {
+          "RequiresHandle": true
+        },
+        "Handle": {
+          "$className": "Part",
+          "$properties": {
+            "Size": [1.2, 0.8, 0.4],
+            "Color": [200, 160, 40],
+            "Material": "Metal",
+            "Anchored": false
+          }
+        },
+        "Screen": {
+          "$className": "Part",
+          "$properties": {
+            "Size": [0.8, 0.6, 0.05],
+            "Color": [30, 30, 10],
+            "Material": "Glass",
+            "Anchored": false
+          }
+        },
+        "RadarScript": {
+          "$path": "src/client/KeyRadarScript.client.lua"
+        }
       }
     },
     "StarterPlayer": {

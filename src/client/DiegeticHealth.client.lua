@@ -50,18 +50,6 @@ gradient.Parent = vignetteFrame
 ---------------------------------------------------------------------------
 -- CREATE SOUNDS
 ---------------------------------------------------------------------------
-local breathingSound = Instance.new("Sound")
-breathingSound.Name = "HeavyBreathing"
-breathingSound.SoundId = Config.Audio.BreathingId
-breathingSound.Looped = true
-breathingSound.Volume = 0
-
-local heartbeatSound = Instance.new("Sound")
-heartbeatSound.Name = "Heartbeat"
-heartbeatSound.SoundId = Config.Audio.HeartbeatId
-heartbeatSound.Looped = true
-heartbeatSound.Volume = 0
-
 ---------------------------------------------------------------------------
 -- DEATH FADE
 ---------------------------------------------------------------------------
@@ -89,10 +77,24 @@ local cameraShakeIntensity = 0
 ---------------------------------------------------------------------------
 local function onCharacterAdded(character)
 	local humanoid = character:WaitForChild("Humanoid")
+	local rootPart = character:WaitForChild("HumanoidRootPart")
 
-	-- Parent sounds and GUIs
-	breathingSound.Parent = character:WaitForChild("HumanoidRootPart")
-	heartbeatSound.Parent = character:WaitForChild("HumanoidRootPart")
+	-- Create sounds specifically for this character
+	local breathingSound = Instance.new("Sound")
+	breathingSound.Name = "HeavyBreathing"
+	breathingSound.SoundId = Config.Audio.BreathingId
+	breathingSound.Looped = true
+	breathingSound.Volume = 0
+	breathingSound.Parent = rootPart
+
+	local heartbeatSound = Instance.new("Sound")
+	heartbeatSound.Name = "Heartbeat"
+	heartbeatSound.SoundId = Config.Audio.HeartbeatId
+	heartbeatSound.Looped = true
+	heartbeatSound.Volume = 0
+	heartbeatSound.Parent = rootPart
+
+	-- Parent GUIs
 	vignetteGui.Parent = player.PlayerGui
 	deathGui.Parent = player.PlayerGui
 
@@ -166,6 +168,7 @@ local function onCharacterAdded(character)
 
 		-- Fade to black
 		for i = 1, 30 do
+			if player.Character ~= character then break end
 			deathFrame.BackgroundTransparency = 1 - (i / 30)
 			damageBlur.Size = i
 			task.wait(0.05)

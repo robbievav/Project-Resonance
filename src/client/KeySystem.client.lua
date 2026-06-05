@@ -131,8 +131,20 @@ local function doFadeIn()
 end
 
 local function showNoKeyHint()
+	noKeyLabel.Text = "Find the Research Key before descending"
+	noKeyLabel.TextColor3 = Color3.fromRGB(220, 100, 80)
 	noKeyLabel.TextTransparency = 0
 	task.delay(2.5, function()
+		TweenService:Create(noKeyLabel, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+	end)
+end
+
+local function showWaitForTeamHint(notInRoom)
+	local names = table.concat(notInRoom, ", ")
+	noKeyLabel.Text = "Waiting for team: " .. names
+	noKeyLabel.TextColor3 = Color3.fromRGB(240, 140, 40)
+	noKeyLabel.TextTransparency = 0
+	task.delay(3.0, function()
 		TweenService:Create(noKeyLabel, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
 	end)
 end
@@ -160,7 +172,7 @@ if KeyCollected then
 end
 
 if ElevatorUsed then
-	ElevatorUsed.OnClientEvent:Connect(function(action)
+	ElevatorUsed.OnClientEvent:Connect(function(action, extra)
 		if action == "FadeOut" then
 			doFadeOut()
 			-- Reset button to red — key is consumed, need a new one on the next floor
@@ -178,6 +190,8 @@ if ElevatorUsed then
 			doFadeIn()
 		elseif action == "NoKey" then
 			showNoKeyHint()
+		elseif action == "WaitForTeam" then
+			showWaitForTeamHint(extra)
 		elseif action == "Victory" then
 			doFadeOut()
 			task.wait(0.8)
@@ -199,15 +213,28 @@ local CollectionService = game:GetService("CollectionService")
 
 local function connectTrophy(trophyPart)
 	local prompt = trophyPart:FindFirstChildOfClass("ProximityPrompt")
-	if not prompt then return end
-	prompt.RequiresLineOfSight = false
-	prompt.Triggered:Connect(function()
+	if prompt then
+		prompt:Destroy()
+	end
+	
+	local hasTouched = false
+	trophyPart.Touched:Connect(function(otherPart)
+		if hasTouched then return end
+		local char = otherPart.Parent
+		if not char then return end
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if not humanoid or humanoid.Health <= 0 then return end
+		local player = Players:GetPlayerFromCharacter(char)
+		if not player or player ~= Players.LocalPlayer then return end
+
+		hasTouched = true
 		keyIcon.Text = "🏆"
 		keyLabel.Text = "Prototype Trophy inspected! Obby Completed!"
 		showKeyNotification()
 		task.delay(4, function()
 			keyIcon.Text = "🗝"
 			keyLabel.Text = "Research Key acquired — elevator unlocked"
+			hasTouched = false
 		end)
 	end)
 end

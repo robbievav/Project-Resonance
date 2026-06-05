@@ -25,37 +25,98 @@ local isMoving    = false
 -- WAIT FOR CHARACTER
 ---------------------------------------------------------------------------
 local function onCharacterAdded(character)
+	print("[Client FirstPersonController] onCharacterAdded fired for character:", character.Name)
 	local humanoid = character:WaitForChild("Humanoid")
 	local rootPart = character:WaitForChild("HumanoidRootPart")
+	print("[Client FirstPersonController] Character loaded: Humanoid and HumanoidRootPart found.")
 
-	-- Force first person
-	player.CameraMode = Enum.CameraMode.LockFirstPerson
-	camera.CameraType = Enum.CameraType.Custom
-
-	-- Hide all character parts (first-person: you shouldn't see your own body)
+	-- Teleport to lobby on client to prevent network ownership lag from pushing player to roof
 	task.spawn(function()
-		task.wait(0.5)
-		for _, part in ipairs(character:GetDescendants()) do
-			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-				part.LocalTransparencyModifier = 1
+		print("[Client Teleport Loop] Starting client-side snap-to-lobby loop...")
+		for i = 1, 10 do
+			local active = (player:GetAttribute("SinglePlayerActive") == true) or (player:GetAttribute("MultiplayerActive") == true)
+			if not active then
+				print("[Client Teleport Loop] Snapping player to lobby (Y=103) - Iteration:", i)
+				rootPart.CFrame = CFrame.new(0, 103, 0)
+				rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			else
+				print("[Client Teleport Loop] Player is active in game. Breaking loop.")
+				break
 			end
-			if part:IsA("Decal") or part:IsA("Texture") then
-				part.Transparency = 1
+			task.wait(0.1)
+		end
+	end)
+
+	-- Dynamically manage camera mode and body transparency based on active state
+	local active = false
+	
+	local function updateCameraAndVisibility()
+		active = (player:GetAttribute("SinglePlayerActive") == true) or (player:GetAttribute("MultiplayerActive") == true)
+		if active then
+			player.CameraMode = Enum.CameraMode.LockFirstPerson
+			camera.CameraType = Enum.CameraType.Custom
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("Decal") or part:IsA("Texture") then
+					part.Transparency = 1
+				end
+			end
+		else
+			player.CameraMode = Enum.CameraMode.Classic
+			camera.CameraType = Enum.CameraType.Custom
+			
+			-- Reset crouch state if returning to lobby
+			if isCrouching then
+				isCrouching = false
+				humanoid.HipHeight = humanoid.HipHeight + 1.5
+			end
+			humanoid.WalkSpeed = 16
+			
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("Decal") or part:IsA("Texture") then
+					part.Transparency = 0
+				end
 			end
 		end
+	end
 
-		-- Keep hiding parts that Roblox tries to show
+	player:GetAttributeChangedSignal("SinglePlayerActive"):Connect(updateCameraAndVisibility)
+	player:GetAttributeChangedSignal("MultiplayerActive"):Connect(updateCameraAndVisibility)
+	updateCameraAndVisibility()
+
+	task.spawn(function()
+		task.wait(0.5)
+		updateCameraAndVisibility()
+
 		RunService.RenderStepped:Connect(function()
 			for _, part in ipairs(character:GetDescendants()) do
 				if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-					part.LocalTransparencyModifier = 1
+					if active then
+						-- Hide character parts in-game, except for tool parts
+						local isToolPart = false
+						local current = part.Parent
+						while current and current ~= character do
+							if current:IsA("Tool") then
+								isToolPart = true
+								break
+							end
+							current = current.Parent
+						end
+						if isToolPart then
+							part.LocalTransparencyModifier = 0
+						else
+							part.LocalTransparencyModifier = 1
+						end
+					else
+						-- Show normally in the lobby
+						part.LocalTransparencyModifier = 0
+					end
 				end
 			end
 		end)
 	end)
 
 	-- Set initial walk speed
-	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	updateCameraAndVisibility()
 
 	---------------------------------------------------------------------
 	-- HEAD BOB
@@ -68,7 +129,7 @@ local function onCharacterAdded(character)
 		local hSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 		isMoving = hSpeed > 1
 
-		if isMoving then
+		if isMoving and active then
 			local bobSpeed = Config.Player.HeadBobSpeed
 			local bobAmount = Config.Player.HeadBobAmount
 			if isCrouching then
@@ -92,6 +153,11 @@ local function onCharacterAdded(character)
 	local isSprinting = false
 
 	local function updateMovementState()
+		if not active then
+			humanoid.WalkSpeed = 16
+			return
+		end
+
 		local wantCrouch = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.C)
 		local wantSprint = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
 

@@ -102,13 +102,13 @@ Config.Player = {
 -- FOOTSTEP SOUND IDS  (placeholder Roblox asset IDs — replace with real ones)
 ---------------------------------------------------------------------------
 Config.FootstepSounds = {
-	Concrete   = "rbxassetid://9114234894",
-	Metal      = "rbxassetid://9114234894",
-	Tile       = "rbxassetid://9114234894",
-	Carpet     = "rbxassetid://9114234894",
-	Glass      = "rbxassetid://9114234894",  -- laboratory
-	Granite    = "rbxassetid://9114234894",  -- stairwells
-	Default    = "rbxassetid://9114234894",
+	Concrete   = "rbxasset://sounds/action_footsteps_plastic.mp3",
+	Metal      = "rbxasset://sounds/action_footsteps_plastic.mp3",
+	Tile       = "rbxasset://sounds/action_footsteps_plastic.mp3",
+	Carpet     = "rbxasset://sounds/action_footsteps_plastic.mp3",
+	Glass      = "rbxasset://sounds/action_footsteps_plastic.mp3",  -- laboratory
+	Granite    = "rbxasset://sounds/action_footsteps_plastic.mp3",  -- stairwells
+	Default    = "rbxasset://sounds/action_footsteps_plastic.mp3",
 }
 
 ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ Config.SoundLevels = {
 -- DECIBEL AI
 ---------------------------------------------------------------------------
 Config.AI = {
-	SpawnDelay           = 15,        -- seconds after round start
+	SpawnDelay           = 10,        -- seconds after round start
 	PatrolSpeed          = 8,
 	ChaseSpeed           = 20,
 	HearingRadius        = 80,       -- studs
@@ -155,13 +155,13 @@ Config.Atmosphere = {
 -- AUDIO
 ---------------------------------------------------------------------------
 Config.Audio = {
-	AmbientDroneId     = "rbxassetid://9114234894",  -- placeholder
-	HeartbeatId        = "rbxassetid://9114234894",
-	BreathingId        = "rbxassetid://9114234894",
-	DoorHingeId        = "rbxassetid://9114234894",
-	NearMissStingerId  = "rbxassetid://9114234894",
-	DrippingWaterId    = "rbxassetid://9114234894",
-	FluorescentHumId   = "rbxassetid://9114234894",
+	AmbientDroneId     = "rbxasset://sounds/action_falling.ogg",  -- placeholder
+	HeartbeatId        = "rbxassetid://6724333590",
+	BreathingId        = "rbxasset://sounds/action_falling.ogg",
+	DoorHingeId        = "rbxasset://sounds/action_jump_land.mp3",
+	NearMissStingerId  = "rbxassetid://12221967",
+	DrippingWaterId    = "rbxassetid://12221967",
+	FluorescentHumId   = "rbxassetid://12221967",
 	DroneFadeTime      = 2,        -- seconds
 }
 

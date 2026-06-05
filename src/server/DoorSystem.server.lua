@@ -56,6 +56,7 @@ local function toggleDoor(door, wantOpen, initiatorPart)
 	else
 		-- OPEN the door — swing 90 degrees away from the initiator
 		if prompt then prompt.ActionText = "Close" end
+		door.CanCollide = false -- Allow immediate passage as it swings open
 
 		-- Determine perpendicular normal vector of the door
 		local doorNormal = (door.Size.X > door.Size.Z) and door.CFrame.LookVector or door.CFrame.RightVector
@@ -82,7 +83,6 @@ local function toggleDoor(door, wantOpen, initiatorPart)
 		tween:Play()
 		tween.Completed:Wait()
 		state.isOpen = true
-		door.CanCollide = false
 
 		emitDoorSound(door.Position, "DoorOpen")
 	end
@@ -147,69 +147,88 @@ end
 ---------------------------------------------------------------------------
 -- SETUP: Find all doors and attach listeners
 ---------------------------------------------------------------------------
-local function setupDoors()
-	-- Give the map a moment to fully generate
-	task.wait(2)
+local function setupSingleDoor(door)
+	if doorStates[door] then return end
 
-	local doors = {}
-	for _, descendant in ipairs(mapFolder:GetDescendants()) do
-		if descendant:IsA("BasePart") and descendant.Name == "Door" then
-			table.insert(doors, descendant)
-		end
+	-- Inject PathfindingModifier dynamically as a fallback for old/active maps
+	local pm = door:FindFirstChildOfClass("PathfindingModifier")
+	if not pm then
+		pm = Instance.new("PathfindingModifier")
+		pm.Label = "Door"
+		pm.PassThrough = true
+		pm.Parent = door
 	end
 
-	print("[DoorSystem] Found", #doors, "doors.")
+	-- Determine the hinge offset based on door orientation
+	-- Hinge on the left edge of the door (relative to its local axes)
+	local doorSize = door.Size
+	local hingeOffset
+	if doorSize.X > doorSize.Z then
+		-- Door faces along Z axis (PosZ/NegZ wall) — hinge on left X edge
+		hingeOffset = CFrame.new(-doorSize.X / 2, 0, 0)
+	else
+		-- Door faces along X axis (PosX/NegX wall) — hinge on left Z edge
+		hingeOffset = CFrame.new(0, 0, -doorSize.Z / 2)
+	end
 
-	for _, door in ipairs(doors) do
-		-- Inject PathfindingModifier dynamically as a fallback for old/active maps
-		local pm = door:FindFirstChildOfClass("PathfindingModifier")
-		if not pm then
-			pm = Instance.new("PathfindingModifier")
-			pm.Label = "Door"
-			pm.PassThrough = true
-			pm.Parent = door
-		end
+	doorStates[door] = {
+		isOpen      = false,
+		originalCF  = door.CFrame,
+		tweening    = false,
+		hingeOffset = hingeOffset,
+	}
 
-		-- Determine the hinge offset based on door orientation
-		-- Hinge on the left edge of the door (relative to its local axes)
-		local doorSize = door.Size
-		local hingeOffset
-		if doorSize.X > doorSize.Z then
-			-- Door faces along Z axis (PosZ/NegZ wall) — hinge on left X edge
-			hingeOffset = CFrame.new(-doorSize.X / 2, 0, 0)
-		else
-			-- Door faces along X axis (PosX/NegX wall) — hinge on left Z edge
-			hingeOffset = CFrame.new(0, 0, -doorSize.Z / 2)
-		end
-
-		doorStates[door] = {
-			isOpen      = false,
-			originalCF  = door.CFrame,
-			tweening    = false,
-			hingeOffset = hingeOffset,
-		}
-
-		-- Create the hinge sound
-		local hingeSound = Instance.new("Sound")
+	-- Create the hinge sound if it doesn't exist
+	local hingeSound = door:FindFirstChild("HingeSound")
+	if not hingeSound then
+		hingeSound = Instance.new("Sound")
 		hingeSound.Name = "HingeSound"
 		hingeSound.SoundId = Config.Audio.DoorHingeId
 		hingeSound.Volume = 0.6
 		hingeSound.RollOffMaxDistance = 40
 		hingeSound.Parent = door
+	end
 
-		-- Listen for ProximityPrompt activation
-		local prompt = door:FindFirstChildOfClass("ProximityPrompt")
-		if prompt then
-			prompt.RequiresLineOfSight = false
-			prompt.Triggered:Connect(function(player)
-				local state = doorStates[door]
-				if not state or state.tweening then return end
-				local char = player.Character
-				local root = char and char:FindFirstChild("HumanoidRootPart")
-				toggleDoor(door, not state.isOpen, root)
-			end)
+	-- Listen for or dynamically create ProximityPrompt activation
+	local prompt = door:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then
+		prompt = Instance.new("ProximityPrompt")
+		prompt.ActionText = "Open"
+		prompt.ObjectText = "Door"
+		prompt.MaxActivationDistance = 8
+		prompt.HoldDuration = 0.3
+		prompt.Parent = door
+	end
+	prompt.RequiresLineOfSight = false
+
+	prompt.Triggered:Connect(function(player)
+		local state = doorStates[door]
+		if not state or state.tweening then return end
+		local char = player.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		toggleDoor(door, not state.isOpen, root)
+	end)
+end
+
+local function setupDoors()
+	-- Give the map a moment to fully generate
+	task.wait(2)
+
+	-- Connect existing doors
+	for _, descendant in ipairs(mapFolder:GetDescendants()) do
+		if descendant:IsA("BasePart") and descendant.Name == "Door" then
+			setupSingleDoor(descendant)
 		end
 	end
+
+	-- Listen for new doors (e.g. dynamically generated or streamed in)
+	mapFolder.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("BasePart") and descendant.Name == "Door" then
+			setupSingleDoor(descendant)
+		end
+	end)
+
+	print("[DoorSystem] Door system scanning complete. Listening for dynamic updates.")
 end
 
 ---------------------------------------------------------------------------

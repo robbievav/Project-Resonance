@@ -217,9 +217,9 @@ function DecibelAI:getAIFloor()
 	local y = self.entity.PrimaryPart.Position.Y
 	local floor
 	if self.modeName == "Multiplayer" then
-		floor = math.floor((-y + MC.MultiplayerBaseY) / MC.FloorSeparation) + 1
+		floor = math.floor((25 - (y - MC.MultiplayerBaseY)) / MC.FloorSeparation) + 1
 	else
-		floor = math.floor(-y / MC.FloorSeparation) + 1
+		floor = math.floor((25 - y) / MC.FloorSeparation) + 1
 	end
 	return math.clamp(floor, 1, self.maxFloors)
 end
@@ -245,7 +245,13 @@ function DecibelAI:getRandomPatrolTarget()
 end
 
 function DecibelAI:getDifficultyMult()
-	return 1 + (self.currentFloor - 1) * AC.DifficultyPerFloor
+	local baseMult = 0.7
+	local increment = 0.15
+	if self.modeName == "Multiplayer" then
+		baseMult = 0.9
+		increment = 0.20
+	end
+	return baseMult + (self.currentFloor - 1) * increment
 end
 
 function DecibelAI:getScaledSpeed(baseSpeed)
@@ -329,7 +335,7 @@ function DecibelAI:performEcholocation(player)
 	if not sonarSound then
 		sonarSound = Instance.new("Sound")
 		sonarSound.Name = "SonarSound"
-		sonarSound.SoundId = "rbxassetid://9114234894"
+		sonarSound.SoundId = "rbxassetid://12221967"
 		sonarSound.Volume = 1
 		sonarSound.RollOffMaxDistance = 120
 		sonarSound.Parent = torso
@@ -388,7 +394,8 @@ function DecibelAI:tick()
 		self.lastSoundTime = tick()
 		self.investigateTarget = loudest.Position
 
-		local chaseThreshold = math.max(0.1, Config.SoundLevels.Run - (self.currentFloor - 1) * 0.25)
+		local baseThreshold = Config.SoundLevels.Run
+		local chaseThreshold = math.max(0.1, baseThreshold - (self:getDifficultyMult() - 1) * 0.5)
 
 		if loudest.Volume >= chaseThreshold then
 			self.currentState = State.CHASE
@@ -410,7 +417,8 @@ function DecibelAI:tick()
 				local pRow, pCol = getRoomGridCell(playerRoot.Position, self.modeName)
 
 				if aRow == pRow and aCol == pCol then
-					if tick() - self.lastEchoTime > (AC.EchoInterval or 4) then
+					local echoInterval = (AC.EchoInterval or 4) / self:getDifficultyMult()
+					if tick() - self.lastEchoTime > echoInterval then
 						self.lastEchoTime = tick()
 						self:performEcholocation(nearestPlayer)
 					end
@@ -605,15 +613,25 @@ local function runAILoop(aiInstance)
 
 					while aiInstance.entity and aiInstance.entity.Parent do
 						local hasActive = false
+						local playerFloor = nil
 						for _, plr in ipairs(Players:GetPlayers()) do
 							if plr:GetAttribute(aiInstance.activeAttributeName) == true then
 								hasActive = true
+								playerFloor = plr:GetAttribute("CurrentFloor") or 1
 								break
 							end
 						end
 
 						if not hasActive then
 							print("[DecibelAI] No active " .. aiInstance.modeName .. " players left. Despawning...")
+							aiInstance.entity:Destroy()
+							aiInstance.entity = nil
+							aiInstance.currentState = State.IDLE
+							break
+						end
+
+						if playerFloor and playerFloor ~= aiInstance.currentFloor then
+							print("[DecibelAI] Player floor changed to " .. playerFloor .. ". Despawning Decibel from floor " .. aiInstance.currentFloor .. " and resetting spawn delay.")
 							aiInstance.entity:Destroy()
 							aiInstance.entity = nil
 							aiInstance.currentState = State.IDLE
